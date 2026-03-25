@@ -1,11 +1,12 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.database import init_db, get_db
 from core.config import get_settings
-from core.database import init_db
 from core.auth import get_password_hash
 from api.auth import router as auth_router
 from api.templates import router as templates_router
@@ -20,8 +21,14 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize database
-    await init_db()
-    await seed_admin()
+    print("🚀 Starting Claim360 API...")
+    try:
+        await init_db()
+        await seed_admin()
+        print("✅ Database initialized and seeded.")
+    except Exception as e:
+        print(f"❌ Database initialization FAILED: {str(e)}")
+    
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     yield
 
@@ -82,8 +89,13 @@ async def root():
 
 
 @app.get("/health")
-async def health():
-    return {"status": "healthy"}
+async def health(db: AsyncSession = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        await db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": str(e)}
 
 
 # Serve built React frontend (when running in production / after `npm run build`)
