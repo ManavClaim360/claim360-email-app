@@ -1,38 +1,21 @@
 {
   "version": 2,
-  "builds": [
+  "functions": {
+    "backend/main.py": {
+      "runtime": "python3.11",
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
     {
-      "src": "backend/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "runtime": "python3.11"
-      }
+      "source": "/api/(.*)",
+      "destination": "backend/main.py"
     },
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "source": "/(.*)",
+      "destination": "/$1"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/main.py"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/(.*)",
-      "status": 200,
-      "dest": "/frontend/index.html"
-    }
-  ]
+  "cleanUrls": true,
+  "trailingSlash": false
 }

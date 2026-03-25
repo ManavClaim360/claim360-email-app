@@ -19,8 +19,20 @@ from api.signature import router as signature_router
 from api.data import router as data_router
 from api.tracking import router as tracking_router
 from core.database import get_db
+import traceback
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI(title="Claim360 API")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"GLOBAL ERROR: {str(exc)}")
+    logger.error(traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error": str(exc)},
+    )
 
 @app.on_event("startup")
 async def startup_event():
