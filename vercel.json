@@ -27,10 +27,6 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/(.*)",
       "status": 200,
       "dest": "/frontend/index.html"
     }

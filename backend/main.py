@@ -17,7 +17,7 @@ from api.campaigns import router as campaigns_router
 from api.templates import router as templates_router
 from api.signature import router as signature_router
 from api.data import router as data_router
-from api.tracking import router as tracking_router
+from api.tracking import tracking_router, admin_router as tracking_admin_router
 from core.database import get_db
 import traceback
 from fastapi import Request
@@ -44,6 +44,7 @@ app.include_router(templates_router)
 app.include_router(signature_router)
 app.include_router(data_router)
 app.include_router(tracking_router)
+app.include_router(tracking_admin_router)
 
 @app.get("/api/health")
 async def health(db: AsyncSession = Depends(get_db)):
