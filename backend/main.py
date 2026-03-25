@@ -23,7 +23,18 @@ import traceback
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="Claim360 API")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -51,10 +62,10 @@ app.include_router(data_router)
 app.include_router(tracking_router)
 app.include_router(tracking_admin_router)
 
+# Health and root API endpoints
 @app.get("/api/health")
 async def health(db: AsyncSession = Depends(get_db)):
     try:
-        # Check database connection
         await db.execute(text("SELECT 1"))
         return {"status": "ok", "message": "API and Database are connected"}
     except Exception as e:
@@ -63,4 +74,4 @@ async def health(db: AsyncSession = Depends(get_db)):
 
 @app.get("/")
 async def root():
-    return {"message": "API is running"}
+    return {"message": "Claim360 API is running"}
