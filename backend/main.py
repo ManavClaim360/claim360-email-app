@@ -5,18 +5,54 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# from api.auth import router as auth_router
-# from api.templates import router as templates_router
-# from api.campaigns import router as campaigns_router
-# from api.data import router as data_router
-# from api.tracking import tracking_router, admin_router
-# from api.signature import router as signature_router
+_router_errors = {}
 
-from core.database import init_db, get_db
-from core.config import get_settings
-from core.auth import get_password_hash
+try:
+    from api.auth import router as auth_router
+except Exception as e:
+    auth_router = None
+    _router_errors["auth"] = str(e)
 
-settings = get_settings()
+try:
+    from api.templates import router as templates_router
+except Exception as e:
+    templates_router = None
+    _router_errors["templates"] = str(e)
+
+try:
+    from api.campaigns import router as campaigns_router
+except Exception as e:
+    campaigns_router = None
+    _router_errors["campaigns"] = str(e)
+
+try:
+    from api.data import router as data_router
+except Exception as e:
+    data_router = None
+    _router_errors["data"] = str(e)
+
+try:
+    from api.tracking import tracking_router, admin_router
+except Exception as e:
+    tracking_router = None
+    admin_router = None
+    _router_errors["tracking"] = str(e)
+
+try:
+    from api.signature import router as signature_router
+except Exception as e:
+    signature_router = None
+    _router_errors["signature"] = str(e)
+
+# from core.database import init_db, get_db
+# from core.config import get_settings
+# from core.auth import get_password_hash
+
+# settings = get_settings()
+
+def get_app_settings():
+    from core.config import get_settings
+    return get_settings()
 
 
 @asynccontextmanager
@@ -32,6 +68,7 @@ async def lifespan(app: FastAPI):
         traceback.print_exc()
         print(f"❌ Database initialization FAILED: {str(e)}")
     
+    settings = get_app_settings()
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     yield
 
@@ -41,6 +78,8 @@ async def seed_admin():
     from core.database import AsyncSessionLocal
     from models.user import User
     from sqlalchemy import select
+    from core.auth import get_password_hash
+    settings = get_app_settings()
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(User).where(User.email == settings.ADMIN_EMAIL))
         if not result.scalar_one_or_none():
@@ -73,15 +112,16 @@ app.add_middleware(
 )
 
 # Routers
-# app.include_router(auth_router)
-# app.include_router(templates_router)
-# app.include_router(campaigns_router)
-# app.include_router(data_router)
-# app.include_router(tracking_router)
-# app.include_router(admin_router)
-# app.include_router(signature_router)
+if auth_router: app.include_router(auth_router)
+if templates_router: app.include_router(templates_router)
+if campaigns_router: app.include_router(campaigns_router)
+if data_router: app.include_router(data_router)
+if tracking_router: app.include_router(tracking_router)
+if admin_router: app.include_router(admin_router)
+if signature_router: app.include_router(signature_router)
 
 # Serve uploaded files (attachments)
+settings = get_app_settings()
 if os.path.exists(settings.UPLOAD_DIR):
     app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
@@ -110,6 +150,7 @@ async def health():
         "SECRET_KEY": bool(os.getenv("SECRET_KEY")),
         "GOOGLE_CLIENT_ID": bool(os.getenv("GOOGLE_CLIENT_ID")),
     }
+    result["router_errors"] = _router_errors
     return result
 
 
