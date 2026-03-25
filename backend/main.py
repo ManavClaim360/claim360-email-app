@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.auth import router as auth_router
 from api.templates import router as templates_router
 from api.campaigns import router as campaigns_router
-from api.data import router as data_router
-from api.tracking import tracking_router, admin_router
-from api.signature import router as signature_router
+# from api.data import router as data_router
+# from api.tracking import tracking_router, admin_router
+# from api.signature import router as signature_router
 
 from core.database import init_db, get_db
 from core.config import get_settings
@@ -76,10 +76,10 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(templates_router)
 app.include_router(campaigns_router)
-app.include_router(data_router)
-app.include_router(tracking_router)
-app.include_router(admin_router)
-app.include_router(signature_router)
+# app.include_router(data_router)
+# app.include_router(tracking_router)
+# app.include_router(admin_router)
+# app.include_router(signature_router)
 
 # Serve uploaded files (attachments)
 if os.path.exists(settings.UPLOAD_DIR):
