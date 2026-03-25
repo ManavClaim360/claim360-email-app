@@ -5,17 +5,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# from core.database import init_db, get_db
-# from core.config import get_settings
-# from core.auth import get_password_hash
-# from api.auth import router as auth_router
-# from api.templates import router as templates_router
-# from api.campaigns import router as campaigns_router
-# from api.data import router as data_router
-# from api.tracking import tracking_router, admin_router
-# from api.signature import router as signature_router
+from api.auth import router as auth_router
+from api.templates import router as templates_router
+from api.campaigns import router as campaigns_router
+from api.data import router as data_router
+from api.tracking import tracking_router, admin_router
+from api.signature import router as signature_router
 
-# settings = get_settings()
+from core.database import init_db, get_db
+from core.config import get_settings
+from core.auth import get_password_hash
+
+settings = get_settings()
 
 
 @asynccontextmanager
@@ -59,7 +60,7 @@ app = FastAPI(
     title="Claim360 Email WebApp API",
     description="Bulk email system with Gmail OAuth, tracking, and team management",
     version="1.0.0",
-    # lifespan=lifespan,
+    lifespan=lifespan,
 )
 
 # CORS
@@ -72,17 +73,17 @@ app.add_middleware(
 )
 
 # Routers
-# app.include_router(auth_router)
-# app.include_router(templates_router)
-# app.include_router(campaigns_router)
-# app.include_router(data_router)
-# app.include_router(tracking_router)
-# app.include_router(admin_router)
-# app.include_router(signature_router)
+app.include_router(auth_router)
+app.include_router(templates_router)
+app.include_router(campaigns_router)
+app.include_router(data_router)
+app.include_router(tracking_router)
+app.include_router(admin_router)
+app.include_router(signature_router)
 
 # Serve uploaded files (attachments)
-# if os.path.exists(settings.UPLOAD_DIR):
-#     app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+if os.path.exists(settings.UPLOAD_DIR):
+    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
 @app.get("/")
@@ -90,9 +91,26 @@ async def root():
     return {"name": "Claim360 Email WebApp API", "version": "1.0.0", "status": "running"}
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
-    return {"status": "healthy", "minimal": "true"}
+    result = {"status": "healthy", "database": "not_checked", "env": "checked"}
+    try:
+        from core.database import AsyncSessionLocal
+        from sqlalchemy import text
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+            result["database"] = "connected"
+    except Exception as e:
+        result["status"] = "partially_healthy"
+        result["database"] = f"error: {str(e)}"
+    
+    # Check if critical env vars are set (without revealing values)
+    result["env_vars"] = {
+        "DATABASE_URL": bool(os.getenv("DATABASE_URL")),
+        "SECRET_KEY": bool(os.getenv("SECRET_KEY")),
+        "GOOGLE_CLIENT_ID": bool(os.getenv("GOOGLE_CLIENT_ID")),
+    }
+    return result
 
 
 # Serve built React frontend (when running in production / after `npm run build`)
