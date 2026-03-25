@@ -18,7 +18,7 @@ from api.templates import router as templates_router
 from api.signature import router as signature_router
 from api.data import router as data_router
 from api.tracking import tracking_router, admin_router as tracking_admin_router
-from core.database import get_db
+from core.database import get_db, init_db
 import traceback
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -37,6 +37,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting up Claim360 API...")
+    try:
+        await init_db()
+        logger.info("Database initialized successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization FAILED: {str(e)}")
 
 app.include_router(auth_router)
 app.include_router(campaigns_router)
