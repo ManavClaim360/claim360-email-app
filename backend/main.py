@@ -23,10 +23,12 @@ async def lifespan(app: FastAPI):
     # Initialize database
     print("🚀 Starting Claim360 API...")
     try:
-        await init_db()
-        await seed_admin()
-        print("✅ Database initialized and seeded.")
+        # await init_db()
+        # await seed_admin()
+        print("ℹ️ Database auto-init disabled for debugging.")
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"❌ Database initialization FAILED: {str(e)}")
     
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
