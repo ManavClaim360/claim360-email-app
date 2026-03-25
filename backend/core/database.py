@@ -5,10 +5,18 @@ from core.config import get_settings
 
 settings = get_settings()
 
+# Sanitize DATABASE_URL: asyncpg can be picky about sslmode in the string
+db_url = settings.DATABASE_URL
+if "sslmode=" in db_url:
+    # Remove sslmode from string and we will handle it in connect_args
+    import re
+    db_url = re.sub(r"[?&]sslmode=[^&]+", "", db_url)
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    db_url,
     echo=False,
-    poolclass=NullPool,  # Required for serverless (Vercel) — no persistent connection pool
+    poolclass=NullPool,
+    connect_args={"ssl": "require"} if "neon.tech" in db_url else {}
 )
 
 AsyncSessionLocal = async_sessionmaker(
