@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth import router as auth_router
+# from api.auth import router as auth_router
 # from api.templates import router as templates_router
 # from api.campaigns import router as campaigns_router
 # from api.data import router as data_router
@@ -73,7 +73,7 @@ app.add_middleware(
 )
 
 # Routers
-app.include_router(auth_router)
+# app.include_router(auth_router)
 # app.include_router(templates_router)
 # app.include_router(campaigns_router)
 # app.include_router(data_router)
