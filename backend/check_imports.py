@@ -1,24 +1,31 @@
 import sys
 import os
 
-# Add backend to path
-sys.path.append(os.getcwd())
+# Add the current directory to sys.path to allow imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-try:
-    print("Importing main...")
-    from main import app
-    print("✅ Main imported successfully.")
-    
-    print("Importing database...")
-    from core.database import engine
-    print("✅ Database engine created.")
-    
-    print("Importing auth...")
-    from api.auth import router as auth_router
-    print("✅ Auth router imported.")
-    
-except Exception as e:
-    print(f"❌ Import FAILED: {str(e)}")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+modules = [
+    "api.auth",
+    "api.campaigns",
+    "api.data",
+    "api.signature",
+    "api.templates",
+    "api.tracking",
+    "core.auth",
+    "core.config",
+    "core.database",
+    "main"
+]
+
+print("Starting import check...")
+for module_name in modules:
+    try:
+        print(f"Checking {module_name}...", end=" ")
+        __import__(module_name)
+        print("OK")
+    except Exception as e:
+        print(f"FAILED: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+print("Import check complete.")
