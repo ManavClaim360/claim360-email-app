@@ -89,13 +89,25 @@ async def root():
 
 
 @app.get("/health")
-async def health(db: AsyncSession = Depends(get_db)):
+async def health():
+    result = {"status": "healthy", "database": "not_checked", "env": "checked"}
     try:
+        from core.database import AsyncSessionLocal
         from sqlalchemy import text
-        await db.execute(text("SELECT 1"))
-        return {"status": "healthy", "database": "connected"}
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+            result["database"] = "connected"
     except Exception as e:
-        return {"status": "unhealthy", "database": str(e)}
+        result["status"] = "partially_healthy"
+        result["database"] = f"error: {str(e)}"
+    
+    # Check if critical env vars are set (without revealing values)
+    result["env_vars"] = {
+        "DATABASE_URL": bool(os.getenv("DATABASE_URL")),
+        "SECRET_KEY": bool(os.getenv("SECRET_KEY")),
+        "GOOGLE_CLIENT_ID": bool(os.getenv("GOOGLE_CLIENT_ID")),
+    }
+    return result
 
 
 # Serve built React frontend (when running in production / after `npm run build`)

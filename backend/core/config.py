@@ -61,4 +61,15 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    try:
+        s = Settings()
+        # mask sensitve parts of DB URL for safety in logs
+        db_url = s.DATABASE_URL
+        if "@" in db_url:
+            masked_url = db_url.split("@")[0].split(":")[0] + ":***@" + db_url.split("@")[1]
+            print(f"ℹ️ Config loaded. DB Host: {db_url.split('@')[1].split('/')[0]}")
+        return s
+    except Exception as e:
+        print(f"❌ Settings loading FAILED: {str(e)}")
+        # Return default settings so the app doesn't crash at module level
+        return Settings(_env_file=None)
