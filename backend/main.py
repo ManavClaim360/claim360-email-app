@@ -1,5 +1,10 @@
 import logging
 import sys
+import os
+
+# Add backend directory to Python path so imports work on Vercel
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
