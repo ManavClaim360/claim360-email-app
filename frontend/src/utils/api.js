@@ -1,7 +1,16 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-const BASE_URL = import.meta.env.VITE_API_URL || ''
+// Determine API URL: env var → Render → localhost fallback
+const envUrl = import.meta.env.VITE_API_URL
+const BASE_URL = envUrl || 'https://claim360-api.onrender.com'
+
+console.log('📡 API Configuration:', {
+  envVar: envUrl,
+  finalUrl: BASE_URL,
+  isDev: import.meta.env.DEV,
+  isProd: import.meta.env.PROD,
+})
 
 export const api = axios.create({
   baseURL: BASE_URL,
