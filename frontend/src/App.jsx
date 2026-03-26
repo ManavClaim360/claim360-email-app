@@ -15,6 +15,7 @@ import OAuthCallback from './pages/OAuthCallback'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
+  console.log('🔒 RequireAuth check:', { loading, hasUser: !!user })
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
       <div className="spinner" style={{ width: 32, height: 32 }} />
@@ -25,6 +26,7 @@ function RequireAuth({ children }) {
 
 function AppRoutes() {
   const { user } = useAuth()
+  console.log('📍 AppRoutes rendering, user:', !!user)
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/config" replace /> : <LoginPage />} />

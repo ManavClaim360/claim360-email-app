@@ -5,27 +5,46 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('mb_user')) } catch { return null }
+    try { 
+      const stored = JSON.parse(localStorage.getItem('mb_user'))
+      console.log('✓ User from localStorage:', stored?.email || 'none')
+      return stored
+    } catch (e) { 
+      console.log('No stored user found')
+      return null 
+    }
   })
   const [loading, setLoading] = useState(true)
 
   const fetchMe = useCallback(async () => {
     const token = localStorage.getItem('mb_token')
-    if (!token) { setLoading(false); return }
+    console.log('🔄 fetchMe: checking token...')
+    if (!token) { 
+      console.log('No token found, user is logged out')
+      setLoading(false)
+      return 
+    }
     try {
+      console.log('📡 Calling /api/auth/me...')
       const me = await authApi.me()
+      console.log('✓ Got user from API:', me.email)
       setUser(me)
       localStorage.setItem('mb_user', JSON.stringify(me))
-    } catch {
+    } catch (err) {
+      console.error('❌ Failed to fetch user:', err.message)
       localStorage.removeItem('mb_token')
       localStorage.removeItem('mb_user')
       setUser(null)
     } finally {
+      console.log('✓ Auth initialization complete')
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => { fetchMe() }, [fetchMe])
+  useEffect(() => { 
+    console.log('⚡ AuthProvider mounted, running fetchMe')
+    fetchMe() 
+  }, [fetchMe])
 
   const login = async (email, password) => {
     const data = await authApi.login(email, password)
