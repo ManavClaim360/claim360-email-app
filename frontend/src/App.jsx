@@ -14,10 +14,21 @@ import SignaturePage from './pages/SignaturePage'
 import OAuthCallback from './pages/OAuthCallback'
 
 function RequireAuth({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, error } = useAuth()
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)', flexDirection: 'column', gap: '20px' }}>
       <div className="spinner" style={{ width: 32, height: 32 }} />
+      <p style={{ color: '#b0c4de', fontFamily: 'monospace' }}>Checking authentication...</p>
+      {error && <p style={{ color: '#f85149', fontFamily: 'monospace', fontSize: '12px', maxWidth: '400px' }}>Error: {error}</p>}
+    </div>
+  )
+  if (error && !user) return (
+    <div style={{ padding: 40, fontFamily: 'monospace', background: 'var(--bg)', color: '#f85149', minHeight: '100vh' }}>
+      <h2 style={{ marginBottom: 16, color: '#f0f6fc' }}>⚠ Auth Error</h2>
+      <p style={{ marginBottom: 12, color: '#b0c4de' }}>Failed to authenticate. {error}</p>
+      <button onClick={() => window.location.href = '/login'} style={{ padding: '10px 20px', background: '#1C305E', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+        Go to Login
+      </button>
     </div>
   )
   return user ? children : <Navigate to="/login" replace />

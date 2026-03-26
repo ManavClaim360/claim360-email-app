@@ -6,6 +6,12 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
 
+// Immediate display - shows we're trying to render
+const root = document.getElementById('root')
+if (root) {
+  root.innerHTML = '<div style="padding: 40px; font-family: monospace; background: #07133a; color: #fff; min-height: 100vh;">⏳ Loading Claim360...</div>'
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000 },
