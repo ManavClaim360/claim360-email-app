@@ -1,13 +1,16 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-// Determine API URL: env var → Render → localhost fallback
+// Determine API URL: env var → Vercel (relative) → localhost fallback
 const envUrl = import.meta.env.VITE_API_URL
-const BASE_URL = envUrl || 'https://claim360-api.onrender.com'
+const isVercel = window.location.hostname.includes('vercel.app')
+const BASE_URL = envUrl || (isVercel ? '' : 'http://localhost:8000')
 
 console.log('📡 API Configuration:', {
   envVar: envUrl,
-  finalUrl: BASE_URL,
+  isVercel,
+  finalUrl: BASE_URL || '(relative)',
+  hostname: window.location.hostname,
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
 })
