@@ -2,15 +2,28 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
 from core.config import get_settings
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 settings = get_settings()
 
-# Sanitize DATABASE_URL: asyncpg can be picky about sslmode in the string
+# Sanitize DATABASE_URL: parse and reconstruct properly
 db_url = settings.DATABASE_URL
-if "sslmode=" in db_url:
-    # Remove sslmode from string and we will handle it in connect_args
-    import re
-    db_url = re.sub(r"[?&]sslmode=[^&]+", "", db_url)
+if "sslmode=" in db_url or "channel_binding=" in db_url:
+    try:
+        parsed = urlparse(db_url)
+        params = parse_qs(parsed.query, keep_blank_values=True)
+        
+        # Remove sslmode and channel_binding - we'll handle them in connect_args
+        params.pop('sslmode', None)
+        params.pop('channel_binding', None)
+        
+        # Reconstruct query string
+        new_query = '&'.join(f"{k}={v[0]}" for k, v in params.items()) if params else ""
+        new_parsed = parsed._replace(query=new_query)
+        db_url = urlunparse(new_parsed)
+    except Exception as e:
+        print(f"Warning: Failed to sanitize DB URL: {e}")
+        # Continue with original URL if parsing fails
 
 engine = create_async_engine(
     db_url,
