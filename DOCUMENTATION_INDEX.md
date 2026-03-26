@@ -41,12 +41,18 @@ This is your complete guide to all documentation and setup for Claim360 Email We
 - Performance improvements
 - Detailed technical explanation
 
-### I want to add team members to deploy
-→ Read: [VERCEL_TEAM_ACCESS.md](./VERCEL_TEAM_ACCESS.md) (Team Setup)
-- Add Pawan95Kumar or other team members
-- Grant deployment permissions
-- GitHub integration for auto-deploy
-- Verify access works
+### I want to fix a deployment failure RIGHT NOW
+→ Read: [VERCEL_FIX_OAUTH_CREDENTIALS.md](./VERCEL_FIX_OAUTH_CREDENTIALS.md) (10 minutes)
+- Most common cause: missing Google OAuth credentials
+- Step-by-step fix for GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
+- Verification checklist to confirm fix
+
+### I need to diagnose a Vercel deployment failure
+→ Read: [VERCEL_DEPLOYMENT_TROUBLESHOOT.md](./VERCEL_DEPLOYMENT_TROUBLESHOOT.md) (Diagnostic Guide)
+- Common failures in priority order (60% of failures are env vars)
+- How to check Vercel logs
+- Error message troubleshooting table
+- Local testing procedures
 
 ### It's the first time deploying this app
 → Read in order:
@@ -62,6 +68,8 @@ This is your complete guide to all documentation and setup for Claim360 Email We
 ### 🌐 Deployment & Infrastructure
 | File | Purpose | Read Time | When |
 |------|---------|-----------|------|
+| [VERCEL_FIX_OAUTH_CREDENTIALS.md](./VERCEL_FIX_OAUTH_CREDENTIALS.md) | Fix missing Google OAuth | 10 min | **Deployment failed** |
+| [VERCEL_DEPLOYMENT_TROUBLESHOOT.md](./VERCEL_DEPLOYMENT_TROUBLESHOOT.md) | Diagnose deployment failures | 15 min | Troubleshooting deployment |
 | [VERCEL_QUICK_DEPLOY.md](./VERCEL_QUICK_DEPLOY.md) | 5-minute quick start | 5 min | Need to deploy NOW |
 | [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) | Complete deployment guide | 20 min | First time deploying |
 | [VERCEL_TEAM_ACCESS.md](./VERCEL_TEAM_ACCESS.md) | Add team members to Vercel | 10 min | Granting deployment access |
