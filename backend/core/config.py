@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost/claim360"
     DATABASE_URL_SYNC: str = "postgresql://postgres:password@localhost/claim360"
 
-    # Redis / Celery
+    # Redis / Celery (Optional - only needed if using background tasks on non-Vercel deployments)
     REDIS_URL: str = "redis://localhost:6379/0"
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"

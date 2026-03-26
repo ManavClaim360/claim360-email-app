@@ -49,10 +49,14 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def startup_event():
     logger.info("Starting up Claim360 API...")
     try:
-        await init_db()
-        logger.info("Database initialized successfully.")
+        result = await init_db()
+        if result:
+            logger.info("Database initialized successfully.")
+        else:
+            logger.warning("Database initialization skipped or had issues - may retry on next request.")
     except Exception as e:
         logger.error(f"Database initialization FAILED: {str(e)}")
+        logger.warning("App will continue running - DB may be already initialized or will initialize on next request.")
 
 app.include_router(auth_router)
 app.include_router(campaigns_router)

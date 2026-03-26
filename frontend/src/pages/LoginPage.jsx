@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { Mail, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-import { authApi } from '../utils/api'
+import { authApi, api } from '../utils/api'
 
 export default function LoginPage() {
   const [tab, setTab] = useState('login')
@@ -35,8 +35,21 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      if (tab === 'login') {
-        await login(form.email, form.password)
+      if (tab === 'login' || tab === 'admin') {
+        // Use admin endpoint if admin login, regular endpoint for user
+        const endpoint = tab === 'admin' ? '/api/auth/admin/login' : '/api/auth/login'
+        const response = await api.post(endpoint, { 
+          email: form.email, 
+          password: form.password 
+        })
+        const { access_token, user_id, email, full_name, is_admin } = response.data
+        localStorage.setItem('mb_token', access_token)
+        localStorage.setItem('mb_user', JSON.stringify({ 
+          id: user_id, 
+          email, 
+          full_name, 
+          is_admin 
+        }))
         navigate('/')
       } else if (tab === 'register') {
         if (form.password.length < 8) { toast.error('Password must be 8+ characters'); return }
@@ -90,16 +103,16 @@ export default function LoginPage() {
 
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 32 }}>
           {/* Tabs */}
-          <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 8, padding: 3, marginBottom: 24 }}>
-            {['login', 'register', 'forgot'].map(t => (
+          <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 8, padding: 3, marginBottom: 24, gap: 2 }}>
+            {['login', 'admin', 'register', 'forgot'].map(t => (
               <button type="button" key={t} onClick={() => { setTab(t); setOtpSent(false) }} style={{
                 flex: 1, padding: '7px 0', borderRadius: 6, border: 'none',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
                 background: tab === t ? 'var(--card)' : 'transparent',
                 color: tab === t ? 'var(--accent)' : 'var(--subtext)',
                 boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
               }}>
-                {t === 'login' ? 'Sign In' : t === 'register' ? 'Register' : 'Reset Pw'}
+                {t === 'login' ? 'User' : t === 'admin' ? 'Admin' : t === 'register' ? 'Register' : 'Reset'}
               </button>
             ))}
           </div>
@@ -111,6 +124,13 @@ export default function LoginPage() {
                 <input value={form.full_name} onChange={set('full_name')} placeholder="Your name" required />
               </div>
             )}
+
+            {(tab === 'login' || tab === 'admin') && (
+              <div style={{ background: tab === 'admin' ? 'rgba(255,140,0,0.1)' : 'transparent', border: tab === 'admin' ? '1px solid rgba(255,140,0,0.3)' : 'none', padding: '10px 12px', borderRadius: 6, marginBottom: 16, fontSize: 12, color: tab === 'admin' ? 'orange' : 'transparent' }}>
+                {tab === 'admin' && '🔒 Admin Login'}
+              </div>
+            )}
+            
             <div className="form-row">
               <label>Email Address</label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -151,9 +171,9 @@ export default function LoginPage() {
             )}
 
             <button type="submit" className="btn-primary" disabled={loading}
-              style={{ width: '100%', padding: '11px', marginTop: 8, fontSize: 14 }}>
+              style={{ width: '100%', padding: '11px', marginTop: 8, fontSize: 14, background: tab === 'admin' ? 'linear-gradient(135deg, #ff8c00, #ff6b35)' : undefined }}>
               {loading ? <span className="spinner" style={{ width: 16, height: 16 }} /> :
-                tab === 'login' ? 'Sign In' : tab === 'register' ? 'Create Account' : 'Reset Password'}
+                (tab === 'login' || tab === 'admin') ? 'Sign In' : tab === 'register' ? 'Create Account' : 'Reset Password'}
             </button>
           </form>
         </div>

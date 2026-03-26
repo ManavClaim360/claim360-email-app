@@ -1,0 +1,44 @@
+# Ignore development files
+.git
+.gitignore
+.env.example
+.env.local
+.env.*.local
+
+# Ignore source maps and debug files
+*.map
+*.log
+
+# Ignore node_modules in root (Vercel builds each part separately)
+node_modules
+
+# Ignore documentation
+README.md
+docs/
+
+# Ignore scripts for local development
+start-dev.sh
+build.sh
+git_check.py
+
+# Ignore desktop app (separate from web deployment)
+desktop/
+
+# Ignore backend virtual environment
+backend/venv/
+
+# Ignore generated files
+backend/__pycache__/
+backend/.pytest_cache/
+backend/*.pyc
+frontend/node_modules/
+
+# Ignore render.yaml (different deployment platform)
+render.yaml
+
+# Ignore uploads directory
+uploads/
+
+# Ignore database files
+*.db
+*.sqlite

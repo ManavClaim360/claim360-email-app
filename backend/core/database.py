@@ -46,5 +46,14 @@ async def init_db():
     import models.user  # noqa — registers User, OAuthToken, Template, Campaign,
                         # EmailLog, TrackingData, Contact, Attachment,
                         # TemplateAttachment, CustomVariable, Signature
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        return True
+    except Exception as e:
+        # On Vercel, database initialization might fail on cold start
+        # Don't raise, just log - the app should still start
+        import logging
+        logging.warning(f"Database initialization issue (may be normal on cold start): {str(e)}")
+        return False

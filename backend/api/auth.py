@@ -30,6 +30,12 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class AdminLoginRequest(BaseModel):
+    """Special admin login endpoint"""
+    email: str
+    password: str
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     full_name: str
@@ -189,6 +195,50 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
         await db.commit()
 
     token = create_access_token({"sub": str(user.id)})
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user_id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_admin=user.is_admin,
+    )
+
+
+@router.post("/admin/login", response_model=TokenResponse)
+async def admin_login(data: AdminLoginRequest, db: AsyncSession = Depends(get_db)):
+    """
+    🛡️ Admin-only login endpoint
+    
+    Must provide email and password of a user marked as admin.
+    Same as /login but explicitly for admin accounts.
+    """
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    if not verify_password(data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # ── Check if user is admin ─────────────────────────────────────────────
+    if not user.is_admin:
+        logger.warning(f"Unauthorized admin login attempt from non-admin user: {data.email}")
+        raise HTTPException(status_code=403, detail="Only admin users can access this endpoint")
+    
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account deactivated")
+
+    # ── Force Gmail re-connect on every login (security) ──────────────────
+    tok_result = await db.execute(select(OAuthToken).where(OAuthToken.user_id == user.id))
+    existing_token = tok_result.scalar_one_or_none()
+    if existing_token:
+        existing_token.is_valid = False
+        await db.commit()
+
+    token = create_access_token({"sub": str(user.id)})
+    logger.info(f"Admin login successful: {data.email}")
     return TokenResponse(
         access_token=token,
         token_type="bearer",
