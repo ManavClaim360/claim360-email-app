@@ -47,16 +47,38 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Starting up Claim360 API...")
+    from core.config import get_settings
+    logger.info("=" * 60)
+    logger.info("🚀 Starting up Claim360 API...")
+    logger.info("=" * 60)
+    
+    # Load and verify configuration
+    try:
+        settings = get_settings()
+        logger.info("✓ Configuration loaded successfully")
+        
+        # Detect environment
+        import os
+        is_vercel = "VERCEL" in os.environ or "VERCEL_URL" in os.environ
+        env_name = "VERCEL" if is_vercel else "LOCAL"
+        logger.info(f"Environment: {env_name}")
+    except Exception as e:
+        logger.error(f"Configuration loading failed: {str(e)}")
+    
+    # Initialize database
     try:
         result = await init_db()
         if result:
-            logger.info("Database initialized successfully.")
+            logger.info("✓ Database initialized successfully.")
         else:
-            logger.warning("Database initialization skipped or had issues - may retry on next request.")
+            logger.warning("Database initialization skipped - may be already initialized.")
     except Exception as e:
         logger.error(f"Database initialization FAILED: {str(e)}")
-        logger.warning("App will continue running - DB may be already initialized or will initialize on next request.")
+        logger.warning("App will continue - DB may initialize on next request.")
+    
+    logger.info("=" * 60)
+    logger.info("✓ Startup complete - API ready to serve requests")
+    logger.info("=" * 60)
 
 app.include_router(auth_router)
 app.include_router(campaigns_router)

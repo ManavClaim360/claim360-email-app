@@ -2,8 +2,9 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 import os
 
-# Always point to the .env file sitting next to this config.py
+# Point to .env file if it exists (local dev), otherwise use env vars (Vercel)
 _ENV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+_ENV_FILE_EXISTS = os.path.exists(_ENV_FILE)
 
 
 class Settings(BaseSettings):
@@ -13,16 +14,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost/claim360"
-    DATABASE_URL_SYNC: str = "postgresql://postgres:password@localhost/claim360"
+    # Database (CRITICAL - no defaults for production)
+    DATABASE_URL: str = ""
+    DATABASE_URL_SYNC: str = ""
 
     # Redis / Celery (Optional - only needed if using background tasks on non-Vercel deployments)
     REDIS_URL: str = "redis://localhost:6379/0"
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
 
-    # Google OAuth
+    # Google OAuth (CRITICAL - empty means OAuth won't work)
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/oauth/callback"
@@ -41,18 +42,18 @@ class Settings(BaseSettings):
     # Email sending
     SEND_DELAY_SECONDS: int = 3
 
-    # Tracking
-    BASE_URL: str = "http://localhost:8000"
+    # Tracking (CRITICAL - must be your actual app URL)
+    BASE_URL: str = ""
 
-    # Frontend URL (for OAuth redirect)
-    FRONTEND_URL: str = "http://localhost:3000"
+    # Frontend URL (for OAuth redirect) (CRITICAL - must be your actual app URL)
+    FRONTEND_URL: str = ""
 
-    # Admin
-    ADMIN_EMAIL: str = "admin@company.com"
-    ADMIN_PASSWORD: str = "admin123"
+    # Admin (CRITICAL - must be set in env vars)
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
 
     model_config = {
-        "env_file": _ENV_FILE,
+        "env_file": _ENV_FILE if _ENV_FILE_EXISTS else None,
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "extra": "ignore",
@@ -63,13 +64,36 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     try:
         s = Settings()
-        # mask sensitve parts of DB URL for safety in logs
-        db_url = s.DATABASE_URL
-        if "@" in db_url:
-            masked_url = db_url.split("@")[0].split(":")[0] + ":***@" + db_url.split("@")[1]
-            print(f"ℹ️ Config loaded. DB Host: {db_url.split('@')[1].split('/')[0]}")
+        
+        # Check for critical missing variables on startup
+        critical_vars = {
+            "DATABASE_URL": s.DATABASE_URL,
+            "DATABASE_URL_SYNC": s.DATABASE_URL_SYNC,
+            "SECRET_KEY": s.SECRET_KEY,
+            "BASE_URL": s.BASE_URL,
+            "FRONTEND_URL": s.FRONTEND_URL,
+            "ADMIN_EMAIL": s.ADMIN_EMAIL,
+            "ADMIN_PASSWORD": s.ADMIN_PASSWORD,
+        }
+        
+        missing = [k for k, v in critical_vars.items() if not v or v == "change-me-in-production-use-strong-secret"]
+        
+        if missing:
+            warning_msg = f"⚠️ CRITICAL: Missing or default environment variables: {', '.join(missing)}"
+            print(warning_msg)
+            import logging
+            logging.getLogger("config").warning(warning_msg)
+        
+        # Log successful config load
+        if "@" in s.DATABASE_URL:
+            db_host = s.DATABASE_URL.split('@')[1].split('/')[0] if s.DATABASE_URL else "NOT SET"
+            print(f"✓ Config loaded. Database: {db_host}")
+        
         return s
     except Exception as e:
         print(f"❌ Settings loading FAILED: {str(e)}")
+        import logging
+        logging.getLogger("config").error(f"Settings loading error: {str(e)}")
         # Return default settings so the app doesn't crash at module level
+        # This allows better error messages during startup/health checks
         return Settings(_env_file=None)
