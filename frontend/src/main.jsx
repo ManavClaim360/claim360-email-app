@@ -6,9 +6,6 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
 
-// Debug startup
-console.log('🚀 React app starting...', import.meta.env.MODE, import.meta.env.VITE_API_URL)
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000 },
@@ -18,18 +15,8 @@ const queryClient = new QueryClient({
 
 // Global error boundary to show actual error instead of white screen
 class ErrorBoundary extends React.Component {
-  constructor(props) { 
-    super(props)
-    this.state = { error: null }
-    console.log('✓ ErrorBoundary ready')
-  }
-  static getDerivedStateFromError(error) { 
-    console.error('❌ React Error Boundary caught:', error)
-    return { error } 
-  }
-  componentDidCatch(error, info) {
-    console.error('Error stack:', info.componentStack)
-  }
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
   render() {
     if (this.state.error) {
       return (
@@ -54,11 +41,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-console.log('📍 Mounting React app...')
-const rootElement = document.getElementById('root')
-console.log('Root element found:', rootElement)
-
-ReactDOM.createRoot(rootElement).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

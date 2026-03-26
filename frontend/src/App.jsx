@@ -15,7 +15,6 @@ import OAuthCallback from './pages/OAuthCallback'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
-  console.log('🔒 RequireAuth check:', { loading, hasUser: !!user })
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
       <div className="spinner" style={{ width: 32, height: 32 }} />
@@ -26,9 +25,35 @@ function RequireAuth({ children }) {
 
 function AppRoutes() {
   const { user } = useAuth()
-  console.log('📍 AppRoutes rendering, user:', !!user)
   return (
     <Routes>
+      <Route path="/login" element={user ? <Navigate to="/config" replace /> : <LoginPage />} />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
+      <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
+        <Route index element={<Navigate to="/config" replace />} />
+        <Route path="config"    element={<ConfigPage />} />
+        <Route path="data"      element={<DataPage />} />
+        <Route path="templates" element={<TemplatePage />} />
+        <Route path="preview"   element={<PreviewPage />} />
+        <Route path="send"      element={<SendPage />} />
+        <Route path="tracking"  element={<TrackingPage />} />
+        <Route path="admin"     element={<AdminPage />} />
+        <Route path="signature" element={<SignaturePage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/config" replace />} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <DataProvider>
+        <AppRoutes />
+      </DataProvider>
+    </AuthProvider>
+  )
+}
       <Route path="/login" element={user ? <Navigate to="/config" replace /> : <LoginPage />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
