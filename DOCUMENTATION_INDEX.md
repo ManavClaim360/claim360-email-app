@@ -41,6 +41,13 @@ This is your complete guide to all documentation and setup for Claim360 Email We
 - Performance improvements
 - Detailed technical explanation
 
+### I want to add team members to deploy
+→ Read: [VERCEL_TEAM_ACCESS.md](./VERCEL_TEAM_ACCESS.md) (Team Setup)
+- Add Pawan95Kumar or other team members
+- Grant deployment permissions
+- GitHub integration for auto-deploy
+- Verify access works
+
 ### It's the first time deploying this app
 → Read in order:
 1. [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) - Complete guide with all details
@@ -57,6 +64,7 @@ This is your complete guide to all documentation and setup for Claim360 Email We
 |------|---------|-----------|------|
 | [VERCEL_QUICK_DEPLOY.md](./VERCEL_QUICK_DEPLOY.md) | 5-minute quick start | 5 min | Need to deploy NOW |
 | [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) | Complete deployment guide | 20 min | First time deploying |
+| [VERCEL_TEAM_ACCESS.md](./VERCEL_TEAM_ACCESS.md) | Add team members to Vercel | 10 min | Granting deployment access |
 | [VERCEL_AUDIT_REPORT.md](./VERCEL_AUDIT_REPORT.md) | Detailed technical audit | 15 min | Understanding what was fixed |
 | [.vercelignore](./.vercelignore) | Files to exclude from deploy | - | Configured automatically |
 | [vercel.json](./vercel.json) | Vercel deployment config | - | Configured automatically |
