@@ -54,30 +54,3 @@ export default function App() {
     </AuthProvider>
   )
 }
-      <Route path="/login" element={user ? <Navigate to="/config" replace /> : <LoginPage />} />
-      <Route path="/oauth/callback" element={<OAuthCallback />} />
-      <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
-        <Route index element={<Navigate to="/config" replace />} />
-        <Route path="config"    element={<ConfigPage />} />
-        <Route path="data"      element={<DataPage />} />
-        <Route path="templates" element={<TemplatePage />} />
-        <Route path="preview"   element={<PreviewPage />} />
-        <Route path="send"      element={<SendPage />} />
-        <Route path="tracking"  element={<TrackingPage />} />
-        <Route path="admin"     element={<AdminPage />} />
-        <Route path="signature" element={<SignaturePage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/config" replace />} />
-    </Routes>
-  )
-}
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <DataProvider>
-        <AppRoutes />
-      </DataProvider>
-    </AuthProvider>
-  )
-}
