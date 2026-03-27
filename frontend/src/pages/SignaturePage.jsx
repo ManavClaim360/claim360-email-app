@@ -297,7 +297,7 @@ export default function SignaturePage({ adminUserId, adminUserEmail, onBack }) {
           <div className="card" style={{ marginBottom: 14 }}>
             <Section icon={User} label="Identity">
               <div className="res-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <F label="Full Name" name="full_name" value={form.full_name} onChange={set} placeholder="Puneet Jaiswal" />
+                <F label="Full Name" name="full_name" value={form.full_name} onChange={set} placeholder="Enter Your Name" />
                 <F label="Job Title" name="title" value={form.title} onChange={set} placeholder="Business Development Manager" />
               </div>
               <F label="Company" name="company" value={form.company} onChange={set} placeholder="CLAIM 360" />
@@ -308,8 +308,8 @@ export default function SignaturePage({ adminUserId, adminUserEmail, onBack }) {
             </Section>
             <Section icon={Phone} label="Contact">
               <div className="res-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <F label="Phone" name="phone" value={form.phone} onChange={set} placeholder="+91 9910501395" />
-                <F label="Email" name="email_addr" value={form.email_addr} onChange={set} placeholder="puneet@claim360.in" />
+                <F label="Phone" name="phone" value={form.phone} onChange={set} placeholder="+91 991xxxxx00" />
+                <F label="Email" name="email_addr" value={form.email_addr} onChange={set} placeholder="youremail@claim360.in" />
               </div>
               <F label="Website" name="website" value={form.website} onChange={set} placeholder="www.claim360.in" />
             </Section>
