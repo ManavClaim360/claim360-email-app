@@ -206,7 +206,7 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=token,
         token_type="bearer",
-        user_id=user.id,
+        id=user.id,
         email=user.email,
         full_name=user.full_name,
         is_admin=user.is_admin,
