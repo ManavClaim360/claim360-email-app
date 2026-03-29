@@ -38,15 +38,22 @@ settings = get_settings()
 allow_origins = ["http://localhost:5173", "http://localhost:3000"]
 if settings.FRONTEND_URL:
     allow_origins.append(settings.FRONTEND_URL.rstrip("/"))
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allow_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allow_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    print("⚠️ FRONTEND_URL is not set! Falling back to allow ALL origins for CORS. Please secure this in production by setting FRONTEND_URL.")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

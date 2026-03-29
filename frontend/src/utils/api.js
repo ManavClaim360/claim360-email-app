@@ -11,9 +11,14 @@ if (parsedEnvUrl && !parsedEnvUrl.startsWith('http')) {
   parsedEnvUrl = 'https://' + parsedEnvUrl;
 }
 
-// On Render, we usually have separate subdomains, so VITE_API_URL is mandatory.
-// If it's missing, we try a relative path if we're on the same domain.
-const BASE_URL = parsedEnvUrl || (isVercel || isRender ? '' : 'http://localhost:8000')
+// In production, we MUST use VITE_API_URL or a relative path. Never fallback to localhost.
+const BASE_URL = import.meta.env.PROD 
+  ? (parsedEnvUrl || '') 
+  : (parsedEnvUrl || 'http://localhost:8000')
+
+if (!parsedEnvUrl && import.meta.env.PROD) {
+  console.warn("⚠️ VITE_API_URL is missing! API requests will fallback to relative paths, which may fail if the backend is on a separate domain.")
+}
 
 
 export const api = axios.create({
