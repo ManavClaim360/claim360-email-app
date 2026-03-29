@@ -35,25 +35,22 @@ app = FastAPI(title="Claim360 API")
 from core.config import get_settings
 settings = get_settings()
 
-allow_origins = ["http://localhost:5173", "http://localhost:3000"]
+allow_origins = []
 if settings.FRONTEND_URL:
     allow_origins.append(settings.FRONTEND_URL.rstrip("/"))
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allow_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # Also allow localhost for development if explicitly in FRONTEND_URL or if no FRONTEND_URL is set (unsafe)
 else:
-    print("⚠️ FRONTEND_URL is not set! Falling back to allow ALL origins for CORS. Please secure this in production by setting FRONTEND_URL.")
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # In a local environment without FRONTEND_URL, we allow these defaults
+    allow_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"]
+    logger.warning("⚠️ FRONTEND_URL is not set! Using localhost defaults for CORS.")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins if allow_origins else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

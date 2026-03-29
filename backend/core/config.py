@@ -18,15 +18,15 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
     DATABASE_URL_SYNC: str = ""
 
-    # Redis / Celery (Optional - only needed if using background tasks on non-Vercel deployments)
-    REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+    # Redis / Celery (Optional - only needed if using background tasks on larger deployments)
+    REDIS_URL: str = ""
+    CELERY_BROKER_URL: str = ""
+    CELERY_RESULT_BACKEND: str = ""
 
     # Google OAuth (CRITICAL - empty means OAuth won't work)
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/oauth/callback"
+    GOOGLE_REDIRECT_URI: str = ""
     GOOGLE_SCOPES: list = [
         "https://www.googleapis.com/auth/gmail.send",
         "https://www.googleapis.com/auth/gmail.readonly",

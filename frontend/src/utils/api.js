@@ -11,13 +11,15 @@ if (parsedEnvUrl && !parsedEnvUrl.startsWith('http')) {
   parsedEnvUrl = 'https://' + parsedEnvUrl;
 }
 
-// In production, we MUST use VITE_API_URL or a relative path. Never fallback to localhost.
-const BASE_URL = import.meta.env.PROD 
-  ? (parsedEnvUrl || '') 
-  : (parsedEnvUrl || 'http://localhost:8000')
+// In production, BASE_URL MUST be provided. If not, it will default to empty (current origin),
+// but we will warn the user about the missing Backend variable.
+const BASE_URL = parsedEnvUrl || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-if (!parsedEnvUrl && import.meta.env.PROD) {
-  console.warn("⚠️ VITE_API_URL is missing! API requests will fallback to relative paths, which may fail if the backend is on a separate domain.")
+if (import.meta.env.PROD && !parsedEnvUrl) {
+  const errorMsg = "⚠️ PRODUCTION ERROR: VITE_API_URL is not set! API calls will fail."
+  console.error(errorMsg)
+  // We don't toast here as it might show up before the UI is ready,
+  // but we keep the BASE_URL restricted.
 }
 
 

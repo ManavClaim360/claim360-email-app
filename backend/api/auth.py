@@ -309,8 +309,10 @@ async def oauth_callback(code: str, state: str, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=400, detail=str(e))
 
     # Redirect to frontend with success signal
-    frontend_url = settings.FRONTEND_URL or "http://localhost:5173"
-    return RedirectResponse(url=f"{frontend_url}/oauth/callback?success=1")
+    if not settings.FRONTEND_URL:
+        raise HTTPException(status_code=500, detail="FRONTEND_URL not configured on server")
+    
+    return RedirectResponse(url=f"{settings.FRONTEND_URL.rstrip('/')}/oauth/callback?success=1")
 
 
 @router.delete("/oauth/disconnect")
