@@ -76,6 +76,8 @@ async def exchange_code_for_tokens(code: str, db: AsyncSession, user_id: int) ->
 
     if not resp.ok:
         err = resp_json.get("error_description") or resp_json.get("error") or resp.text
+        import logging
+        logging.getLogger("gmail").error(f"Google token exchange failed: {err}")
         raise ValueError(f"Google token exchange failed: {err}")
 
     access_token  = resp_json["access_token"]

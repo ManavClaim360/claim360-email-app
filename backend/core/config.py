@@ -52,9 +52,6 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD: str = ""
 
-    # Development mode (set DEV_MODE=true in .env)
-    DEV_MODE: bool = False
-
     model_config = {
         "env_file": _ENV_FILE if _ENV_FILE_EXISTS else None,
         "env_file_encoding": "utf-8",

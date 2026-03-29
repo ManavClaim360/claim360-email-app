@@ -236,3 +236,13 @@ class OTP(Base):
     purpose = Column(String(50), nullable=False)  # 'register', 'reset'
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class OAuthState(Base):
+    """CSRF state for OAuth login — avoids in-memory dicts."""
+    __tablename__ = "oauth_states"
+
+    id = Column(Integer, primary_key=True, index=True)
+    state = Column(String(255), unique=True, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

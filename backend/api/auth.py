@@ -9,7 +9,7 @@ from core.database import get_db
 from core.auth import (
     verify_password, get_password_hash, create_access_token, get_current_user
 )
-from models.user import User, OAuthToken, OTP
+from models.user import User, OAuthToken, OTP, OAuthState
 from services.gmail_service import get_auth_url, exchange_code_for_tokens
 from core.config import get_settings
 import secrets
@@ -81,25 +81,22 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Verify OTP
-    is_dev_otp = settings.DEV_MODE and data.otp == "123456"
+    otp_res = await db.execute(
+        select(OTP).where(
+            OTP.email == data.email, 
+            OTP.purpose == "register",
+            OTP.code == data.otp
+        ).order_by(OTP.id.desc())
+    )
+    otp_entry = otp_res.scalars().first()
+    if not otp_entry:
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
     
-    if not is_dev_otp:
-        otp_res = await db.execute(
-            select(OTP).where(
-                OTP.email == data.email, 
-                OTP.purpose == "register",
-                OTP.code == data.otp
-            ).order_by(OTP.id.desc())
-        )
-        otp_entry = otp_res.scalars().first()
-        if not otp_entry:
-            raise HTTPException(status_code=400, detail="Invalid OTP code")
-        
-        try:
-            if otp_entry.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-                raise HTTPException(status_code=400, detail="Expired OTP code")
-        except Exception:
-            pass
+    try:
+        if otp_entry.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Expired OTP code")
+    except Exception:
+        pass
 
     user = User(
         email=data.email,
@@ -140,16 +137,9 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
     sys_email = os.getenv("SYSTEM_EMAIL")
     sys_pass = os.getenv("SYSTEM_EMAIL_PASSWORD")
     
-    res_msg = "OTP sent to your email"
-    extra_data = {}
-    
-    if settings.DEV_MODE:
-        extra_data["code"] = code
-        res_msg = f"DEV MODE: OTP is {code}"
-
     if not sys_email or not sys_pass:
         print(f"--- OTP FOR {data.email} ({data.purpose}): {code} ---")
-        return {"message": res_msg, **extra_data}
+        return {"message": "OTP printed to server console (SMTP not configured)"}
         
     try:
         msg = EmailMessage()
@@ -164,20 +154,16 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
         server.send_message(msg)
         server.quit()
     except Exception as e:
-        if settings.DEV_MODE:
-            return {"message": f"SMTP Error (but in DEV_MODE): {res_msg}", **extra_data}
         raise HTTPException(status_code=500, detail=f"SMTP Error: {str(e)}")
         
-    return {"message": res_msg}
+    return {"message": "OTP sent to your email"}
 
 @router.post("/reset-password")
 async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     otp_res = await db.execute(select(OTP).where(OTP.email == data.email, OTP.purpose == "reset", OTP.code == data.otp).order_by(OTP.id.desc()))
     otp_entry = otp_res.scalars().first()
     
-    is_dev_otp = settings.DEV_MODE and data.otp == "123456"
-
-    if not otp_entry and not is_dev_otp:
+    if not otp_entry:
         raise HTTPException(status_code=400, detail="Invalid OTP code")
     
     result = await db.execute(select(User).where(User.email == data.email))
@@ -283,22 +269,41 @@ async def get_me(current_user: User = Depends(get_current_user), db: AsyncSessio
 
 
 @router.get("/oauth/url")
-async def get_oauth_url(current_user: User = Depends(get_current_user)):
+async def get_oauth_url(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     state = secrets.token_urlsafe(16)
-    _oauth_states[state] = current_user.id
+    # ── Save state in DB for persistence ──────────────────────────────
+    db.add(OAuthState(state=state, user_id=current_user.id))
+    await db.commit()
+    
     url = get_auth_url(state)
     return {"url": url, "state": state}
 
 
 @router.get("/oauth/callback")
 async def oauth_callback(code: str, state: str, db: AsyncSession = Depends(get_db)):
-    user_id = _oauth_states.pop(state, None)
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
+    # ── Verify state from DB (prevents in-memory issues) ──────────────
+    st_result = await db.execute(select(OAuthState).where(OAuthState.state == state))
+    st_entry = st_result.scalar_one_or_none()
+    
+    if not st_entry:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
 
-    token = await exchange_code_for_tokens(code, db, user_id)
-    # Redirect to desktop app with success signal
-    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    user_id = st_entry.user_id
+    
+    # ── Clean up state ──
+    await db.delete(st_entry)
+    await db.commit()
+
+    try:
+        token = await exchange_code_for_tokens(code, db, user_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Redirect to frontend with success signal
+    frontend_url = settings.FRONTEND_URL or "http://localhost:5173"
     return RedirectResponse(url=f"{frontend_url}/oauth/callback?success=1")
 
 
