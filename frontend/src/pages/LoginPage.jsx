@@ -112,9 +112,9 @@ export default function LoginPage() {
               </div>
             )}
 
-            {(tab === 'login' || tab === 'admin') && (
-              <div style={{ background: tab === 'admin' ? 'rgba(255,140,0,0.1)' : 'transparent', border: tab === 'admin' ? '1px solid rgba(255,140,0,0.3)' : 'none', padding: '10px 12px', borderRadius: 6, marginBottom: 16, fontSize: 12, color: tab === 'admin' ? 'orange' : 'transparent' }}>
-                {tab === 'admin' && '🔒 Admin Login'}
+            {tab === 'admin' && (
+              <div style={{ background: 'rgba(255,140,0,0.1)', border: '1px solid rgba(255,140,0,0.3)', padding: '10px 12px', borderRadius: 6, marginBottom: 16, fontSize: 12, color: 'orange' }}>
+                🔒 Admin Login
               </div>
             )}
             

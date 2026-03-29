@@ -209,7 +209,12 @@ async def stream_campaign_progress(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """SSE endpoint for real-time progress updates."""
+    # First, verify ownership once before starting the stream
+    result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign_check = result.scalar_one_or_none()
+    if not campaign_check or (campaign_check.user_id != current_user.id and not current_user.is_admin):
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
     async def event_generator():
         while True:
             result = await db.execute(
