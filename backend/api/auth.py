@@ -139,28 +139,29 @@ def send_otp_email_task(email: str, purpose: str, code: str, sys_email: str, sys
 
 @router.post("/send-otp")
 async def send_otp(data: SendOTPRequest, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    email_lower = data.email.lower().strip()
     if data.purpose not in ["register", "reset"]:
         raise HTTPException(status_code=400, detail="Invalid purpose")
     
     if data.purpose == "reset":
-        result = await db.execute(select(User).where(User.email == data.email))
+        result = await db.execute(select(User).where(User.email == email_lower))
         if not result.scalar_one_or_none():
             raise HTTPException(status_code=404, detail="Email not found")
             
     code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     
-    db.add(OTP(email=data.email, code=code, purpose=data.purpose, expires_at=expires_at))
+    db.add(OTP(email=email_lower, code=code, purpose=data.purpose, expires_at=expires_at))
     await db.commit()
     
     sys_email = os.getenv("SYSTEM_EMAIL")
     sys_pass = os.getenv("SYSTEM_EMAIL_PASSWORD")
     
     if not sys_email or not sys_pass:
-        print(f"--- OTP FOR {data.email} ({data.purpose}): {code} ---")
+        logger.warning(f"--- OTP FOR {email_lower} ({data.purpose}): {code} (SMTP not configured) ---")
         return {"message": "OTP printed to server console (SMTP not configured)"}
         
-    background_tasks.add_task(send_otp_email_task, data.email, data.purpose, code, sys_email, sys_pass)
+    background_tasks.add_task(send_otp_email_task, email_lower, data.purpose, code, sys_email, sys_pass)
         
     return {"message": "OTP sent to your email"}
 
@@ -215,24 +216,21 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/admin/login", response_model=TokenResponse)
 async def admin_login(data: AdminLoginRequest, db: AsyncSession = Depends(get_db)):
-    """
-    🛡️ Admin-only login endpoint
-    
-    Must provide email and password of a user marked as admin.
-    Same as /login but explicitly for admin accounts.
-    """
-    result = await db.execute(select(User).where(User.email == data.email))
+    email_lower = data.email.lower().strip()
+    result = await db.execute(select(User).where(User.email == email_lower))
     user = result.scalar_one_or_none()
     
     if not user:
+        logger.warning(f"Admin login failed: User not found ({email_lower})")
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     if not verify_password(data.password, user.hashed_password):
+        logger.warning(f"Admin login failed: Incorrect password ({email_lower})")
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     # ── Check if user is admin ─────────────────────────────────────────────
     if not user.is_admin:
-        logger.warning(f"Unauthorized admin login attempt from non-admin user: {data.email}")
+        logger.warning(f"Admin login failed: User is NOT marked as admin ({email_lower})")
         raise HTTPException(status_code=403, detail="Only admin users can access this endpoint")
     
     if not user.is_active:

@@ -109,14 +109,15 @@ async def startup_event():
             from core.auth import get_password_hash
             from core.database import AsyncSessionLocal
             
+            admin_email_lower = settings.ADMIN_EMAIL.lower().strip()
             async with AsyncSessionLocal() as session:
-                result = await session.execute(select(User).where(User.email == settings.ADMIN_EMAIL))
+                result = await session.execute(select(User).where(User.email == admin_email_lower))
                 existing_admin = result.scalar_one_or_none()
                 
                 if not existing_admin:
-                    logger.info(f"🆕 Creating initial admin user: {settings.ADMIN_EMAIL}")
+                    logger.info(f"🆕 Creating initial admin user: {admin_email_lower}")
                     new_admin = User(
-                        email=settings.ADMIN_EMAIL,
+                        email=admin_email_lower,
                         full_name="System Administrator",
                         hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
                         is_admin=True,
@@ -126,7 +127,7 @@ async def startup_event():
                     await session.commit()
                     logger.info("✓ Admin user created successfully.")
                 else:
-                    logger.info(f"✓ Admin user already exists: {settings.ADMIN_EMAIL}")
+                    logger.info(f"✓ Admin user exists: {admin_email_lower}")
         except Exception as e:
             logger.error(f"Failed to seed admin user: {str(e)}")
 
