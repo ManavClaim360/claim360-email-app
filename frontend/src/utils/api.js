@@ -13,13 +13,13 @@ if (parsedEnvUrl && !parsedEnvUrl.startsWith('http')) {
 
 // In production, BASE_URL MUST be provided. If not, it will default to empty (current origin),
 // but we will warn the user about the missing Backend variable.
-const BASE_URL = parsedEnvUrl || (import.meta.env.PROD ? '' : 'http://localhost:8000')
+const BASE_URL = parsedEnvUrl?.trim().replace(/\/$/, '') || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-if (import.meta.env.PROD && !parsedEnvUrl) {
-  const errorMsg = "⚠️ PRODUCTION ERROR: VITE_API_URL is not set! API calls will fail."
-  console.error(errorMsg)
-  // We don't toast here as it might show up before the UI is ready,
-  // but we keep the BASE_URL restricted.
+if (import.meta.env.PROD) {
+  console.log("🚀 Claim360 API Base URL:", BASE_URL || "(Self-hosted/Relative)")
+  if (!parsedEnvUrl) {
+    console.error("⚠️ PRODUCTION WARNING: VITE_API_URL is missing. Ensure it is set in the Render Static Site environment (e.g., https://your-api.onrender.com).")
+  }
 }
 
 

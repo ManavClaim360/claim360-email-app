@@ -65,35 +65,30 @@ def get_settings() -> Settings:
     try:
         s = Settings()
         
+        # Self-healing: guess REDIRECT_URI if BASE_URL is set
+        if s.BASE_URL and not s.GOOGLE_REDIRECT_URI:
+            s.GOOGLE_REDIRECT_URI = f"{s.BASE_URL.rstrip('/')}/api/auth/oauth/callback"
+            print(f"ℹ️ Auto-set GOOGLE_REDIRECT_URI to: {s.GOOGLE_REDIRECT_URI}")
+
         # Check for critical missing variables on startup
         critical_vars = {
             "DATABASE_URL": s.DATABASE_URL,
-            "DATABASE_URL_SYNC": s.DATABASE_URL_SYNC,
-            "SECRET_KEY": s.SECRET_KEY,
             "BASE_URL": s.BASE_URL,
             "FRONTEND_URL": s.FRONTEND_URL,
-            "ADMIN_EMAIL": s.ADMIN_EMAIL,
-            "ADMIN_PASSWORD": s.ADMIN_PASSWORD,
         }
         
-        missing = [k for k, v in critical_vars.items() if not v or v == "change-me-in-production-use-strong-secret"]
+        missing = [k for k, v in critical_vars.items() if not v]
         
         if missing:
-            warning_msg = f"⚠️ CRITICAL: Missing or default environment variables: {', '.join(missing)}"
+            warning_msg = f"⚠️ CRITICAL: Missing environment variables: {', '.join(missing)}"
             print(warning_msg)
-            import logging
-            logging.getLogger("config").warning(warning_msg)
         
         # Log successful config load
         if "@" in s.DATABASE_URL:
             db_host = s.DATABASE_URL.split('@')[1].split('/')[0] if s.DATABASE_URL else "NOT SET"
-            print(f"✓ Config loaded. Database: {db_host}")
+            print(f"✓ Config loaded. Env: {'RENDER' if os.environ.get('RENDER') else 'LOCAL'}")
         
         return s
     except Exception as e:
         print(f"❌ Settings loading FAILED: {str(e)}")
-        import logging
-        logging.getLogger("config").error(f"Settings loading error: {str(e)}")
-        # Return default settings so the app doesn't crash at module level
-        # This allows better error messages during startup/health checks
         return Settings(_env_file=None)

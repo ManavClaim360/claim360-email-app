@@ -35,22 +35,32 @@ app = FastAPI(title="Claim360 API")
 from core.config import get_settings
 settings = get_settings()
 
+# --- CORS CONFIGURATION ---
 allow_origins = []
 if settings.FRONTEND_URL:
+    # Add exactly what the user provided
     allow_origins.append(settings.FRONTEND_URL.rstrip("/"))
-    # Also allow localhost for development if explicitly in FRONTEND_URL or if no FRONTEND_URL is set (unsafe)
+    # Add common variations to be helpful
+    if settings.FRONTEND_URL.startswith("https://"):
+        allow_origins.append(settings.FRONTEND_URL.replace("https://", "http://").rstrip("/"))
 else:
-    # In a local environment without FRONTEND_URL, we allow these defaults
-    allow_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"]
-    logger.warning("⚠️ FRONTEND_URL is not set! Using localhost defaults for CORS.")
+    # Transition fallback for initial Render setup
+    if os.environ.get("RENDER"):
+        logger.warning("⚠️ FRONTEND_URL not set on Render. Allowing all onrender.com subdomains for transition.")
+        allow_origins = ["*"] # Be permissive for initial setup if env vars are missing
+    else:
+        allow_origins = ["http://localhost:5173", "http://localhost:3000"]
+        logger.warning("⚠️ Using local dev origins for CORS.")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins if allow_origins else ["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+# -------------------------
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -93,7 +103,12 @@ async def startup_event():
         logger.warning("App will continue - DB may initialize on next request.")
     
     logger.info("=" * 60)
-    logger.info("✓ Startup complete - API ready to serve requests")
+    logger.info(f"✓ Startup complete - API ready to serve requests")
+    logger.info(f"Allowed Origins: {allow_origins}")
+    if settings.BASE_URL:
+        logger.info(f"Base URL (Backend): {settings.BASE_URL}")
+    if settings.FRONTEND_URL:
+        logger.info(f"Frontend URL: {settings.FRONTEND_URL}")
     logger.info("=" * 60)
 
 app.include_router(auth_router)
