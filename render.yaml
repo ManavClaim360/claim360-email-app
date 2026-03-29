@@ -1,18 +1,29 @@
 services:
-  # 1. Backend Service
+  # 1. Backend Service (FastAPI)
   - type: web
     name: claim360-api
+    plan: free # Explicitly set free plan
     env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        sync: false # You must set this in the dashboard
+        sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: BASE_URL # The URL of the backend (once deployed)
+        sync: false
+      - key: FRONTEND_URL # The URL of the frontend (once deployed)
+        sync: false
 
-  # 2. Frontend Service
+  # 2. Frontend Service (Static Site)
   - type: web
     name: claim360-frontend
     env: static
@@ -20,16 +31,12 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
-      - key: VITE_API_URL
+      - key: VITE_API_URL # Points to the backend URL
         fromService:
           name: claim360-api
           type: web
           property: host
     routes:
-      # This fixes the "Not Found" error on page refresh or redirect
-      - type: rewrite
-        source: /api/*
-        destination: https://claim360-api.onrender.com/api/* # Fallback proxy if needed
       - type: rewrite
         source: /*
         destination: /index.html

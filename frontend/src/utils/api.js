@@ -1,18 +1,21 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-// Determine API URL: env var → Vercel (relative) → localhost fallback
+// Determine API URL: env var (Render) → Vercel (relative) → localhost fallback
 const envUrl = import.meta.env.VITE_API_URL
 const isVercel = window.location.hostname.includes('vercel.app')
-const BASE_URL = envUrl || (isVercel ? '' : 'http://localhost:8000')
+const isRender = window.location.hostname.includes('onrender.com')
+
+// On Render, we usually have separate subdomains, so VITE_API_URL is mandatory.
+// If it's missing, we try a relative path if we're on the same domain.
+const BASE_URL = envUrl || (isVercel || isRender ? '' : 'http://localhost:8000')
 
 console.log('📡 API Configuration:', {
   envVar: envUrl,
   isVercel,
+  isRender,
   finalUrl: BASE_URL || '(relative)',
   hostname: window.location.hostname,
-  isDev: import.meta.env.DEV,
-  isProd: import.meta.env.PROD,
 })
 
 export const api = axios.create({
