@@ -308,7 +308,7 @@ export default function SignaturePage({ adminUserId, adminUserEmail, onBack }) {
             </Section>
             <Section icon={Phone} label="Contact">
               <div className="res-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <F label="Phone" name="phone" value={form.phone} onChange={set} placeholder="+91 991xxxxx00" />
+                <F label="Phone" name="phone" value={form.phone} onChange={set} placeholder="+91 99xxxxxx00" />
                 <F label="Email" name="email_addr" value={form.email_addr} onChange={set} placeholder="youremail@claim360.in" />
               </div>
               <F label="Website" name="website" value={form.website} onChange={set} placeholder="www.claim360.in" />
