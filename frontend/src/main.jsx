@@ -7,6 +7,7 @@ import App from './App'
 import './index.css'
 
 // Immediate display - shows we're trying to render
+console.log("Claim360 Script Loaded - Mounting React...");
 const root = document.getElementById('root')
 if (root) {
   root.innerHTML = '<div style="padding: 40px; font-family: monospace; background: #07133a; color: #fff; min-height: 100vh;">⏳ Loading Claim360...</div>'
