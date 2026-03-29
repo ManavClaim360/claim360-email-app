@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -17,6 +17,9 @@ import os
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -118,8 +121,24 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
         is_admin=user.is_admin,
     )
 
+def send_otp_email_task(email: str, purpose: str, code: str, sys_email: str, sys_pass: str):
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = "Your Claim360 OTP Code"
+        msg["From"] = f"Claim360 <{sys_email}>"
+        msg["To"] = email
+        msg.set_content(f"Your OTP code for {purpose} is: {code}\nThis code will expire in 10 minutes.")
+        
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sys_email, sys_pass)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        logger.error(f"SMTP Error for {email}: {str(e)}")
+
 @router.post("/send-otp")
-async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
+async def send_otp(data: SendOTPRequest, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     if data.purpose not in ["register", "reset"]:
         raise HTTPException(status_code=400, detail="Invalid purpose")
     
@@ -141,20 +160,7 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
         print(f"--- OTP FOR {data.email} ({data.purpose}): {code} ---")
         return {"message": "OTP printed to server console (SMTP not configured)"}
         
-    try:
-        msg = EmailMessage()
-        msg["Subject"] = "Your Claim360 OTP Code"
-        msg["From"] = f"Claim360 <{sys_email}>"
-        msg["To"] = data.email
-        msg.set_content(f"Your OTP code for {data.purpose} is: {code}\nThis code will expire in 10 minutes.")
-        
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(sys_email, sys_pass)
-        server.send_message(msg)
-        server.quit()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"SMTP Error: {str(e)}")
+    background_tasks.add_task(send_otp_email_task, data.email, data.purpose, code, sys_email, sys_pass)
         
     return {"message": "OTP sent to your email"}
 

@@ -6,17 +6,15 @@ const envUrl = import.meta.env.VITE_API_URL
 const isVercel = window.location.hostname.includes('vercel.app')
 const isRender = window.location.hostname.includes('onrender.com')
 
+let parsedEnvUrl = envUrl;
+if (parsedEnvUrl && !parsedEnvUrl.startsWith('http')) {
+  parsedEnvUrl = 'https://' + parsedEnvUrl;
+}
+
 // On Render, we usually have separate subdomains, so VITE_API_URL is mandatory.
 // If it's missing, we try a relative path if we're on the same domain.
-const BASE_URL = envUrl || (isVercel || isRender ? '' : 'http://localhost:8000')
+const BASE_URL = parsedEnvUrl || (isVercel || isRender ? '' : 'http://localhost:8000')
 
-console.log('📡 API Configuration:', {
-  envVar: envUrl,
-  isVercel,
-  isRender,
-  finalUrl: BASE_URL || '(relative)',
-  hostname: window.location.hostname,
-})
 
 export const api = axios.create({
   baseURL: BASE_URL,

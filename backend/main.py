@@ -32,10 +32,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Claim360 API")
 
+from core.config import get_settings
+settings = get_settings()
+
+allow_origins = ["http://localhost:5173", "http://localhost:3000"]
+if settings.FRONTEND_URL:
+    allow_origins.append(settings.FRONTEND_URL.rstrip("/"))
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
