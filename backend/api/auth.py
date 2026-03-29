@@ -55,7 +55,7 @@ class ResetPasswordRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
-    user_id: int
+    id: int  # Changed from user_id to match UserResponse
     email: str
     full_name: str
     is_admin: bool
@@ -81,23 +81,25 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Verify OTP
-    otp_res = await db.execute(
-        select(OTP).where(
-            OTP.email == data.email, 
-            OTP.purpose == "register",
-            OTP.code == data.otp
-        ).order_by(OTP.id.desc())
-    )
-    otp_entry = otp_res.scalars().first()
-    if not otp_entry:
-        raise HTTPException(status_code=400, detail="Invalid OTP code")
+    is_dev_otp = settings.DEV_MODE and data.otp == "123456"
     
-    try:
-        if otp_entry.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-            raise HTTPException(status_code=400, detail="Expired OTP code")
-    except Exception:
-        # Fallback if tzinfo fails
-        pass
+    if not is_dev_otp:
+        otp_res = await db.execute(
+            select(OTP).where(
+                OTP.email == data.email, 
+                OTP.purpose == "register",
+                OTP.code == data.otp
+            ).order_by(OTP.id.desc())
+        )
+        otp_entry = otp_res.scalars().first()
+        if not otp_entry:
+            raise HTTPException(status_code=400, detail="Invalid OTP code")
+        
+        try:
+            if otp_entry.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+                raise HTTPException(status_code=400, detail="Expired OTP code")
+        except Exception:
+            pass
 
     user = User(
         email=data.email,
@@ -113,7 +115,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=token,
         token_type="bearer",
-        user_id=user.id,
+        id=user.id,
         email=user.email,
         full_name=user.full_name,
         is_admin=user.is_admin,
@@ -137,9 +139,17 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
     
     sys_email = os.getenv("SYSTEM_EMAIL")
     sys_pass = os.getenv("SYSTEM_EMAIL_PASSWORD")
+    
+    res_msg = "OTP sent to your email"
+    extra_data = {}
+    
+    if settings.DEV_MODE:
+        extra_data["code"] = code
+        res_msg = f"DEV MODE: OTP is {code}"
+
     if not sys_email or not sys_pass:
         print(f"--- OTP FOR {data.email} ({data.purpose}): {code} ---")
-        return {"message": "OTP printed to console (SMTP not setup)"}
+        return {"message": res_msg, **extra_data}
         
     try:
         msg = EmailMessage()
@@ -154,15 +164,21 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
         server.send_message(msg)
         server.quit()
     except Exception as e:
+        if settings.DEV_MODE:
+            return {"message": f"SMTP Error (but in DEV_MODE): {res_msg}", **extra_data}
         raise HTTPException(status_code=500, detail=f"SMTP Error: {str(e)}")
         
-    return {"message": "OTP sent to your email"}
+    return {"message": res_msg}
 
 @router.post("/reset-password")
 async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     otp_res = await db.execute(select(OTP).where(OTP.email == data.email, OTP.purpose == "reset", OTP.code == data.otp).order_by(OTP.id.desc()))
     otp_entry = otp_res.scalars().first()
-    if not otp_entry: raise HTTPException(status_code=400, detail="Invalid OTP code")
+    
+    is_dev_otp = settings.DEV_MODE and data.otp == "123456"
+
+    if not otp_entry and not is_dev_otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
     
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
@@ -242,7 +258,7 @@ async def admin_login(data: AdminLoginRequest, db: AsyncSession = Depends(get_db
     return TokenResponse(
         access_token=token,
         token_type="bearer",
-        user_id=user.id,
+        id=user.id,
         email=user.email,
         full_name=user.full_name,
         is_admin=user.is_admin,

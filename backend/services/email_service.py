@@ -43,13 +43,26 @@ def sanitize_variable_spans(html: str) -> str:
 
 
 def substitute_variables(template: str, variables: Dict[str, str]) -> str:
-    """Replace {{variable}} placeholders with actual values."""
+    """Replace {{variable}} placeholders with actual values, handling edge cases."""
     if not template:
         return ""
+    
     def replacer(match):
         key = match.group(1).strip()
-        return str(variables.get(key, match.group(0)))
-    return re.sub(r'\{\{(\w+)\}\}', replacer, template)
+        # Fallback to the original placeholder if variable not found
+        val = variables.get(key)
+        if val is None:
+            return match.group(0)
+        
+        # Ensure value is stringified, handle None or shared data
+        val_str = str(val)
+        
+        # If it looks like HTML, we don't escape (since we are in HTML body)
+        # But for plain text fields, we might need caution.
+        return val_str
+
+    # Support {{ var }}, {{var}}, and spaces inside
+    return re.sub(r'\{\{\s*(\w+)\s*\}\}', replacer, template)
 
 
 def generate_tracking_id() -> str:
@@ -250,3 +263,82 @@ async def record_open(tracking_id: str, db: AsyncSession, ip: str = None, ua: st
             campaign.opened_count = (campaign.opened_count or 0) + 1
 
     await db.commit()
+
+
+async def send_test_email(template_id: int, user_id: int, db: AsyncSession, to_email: str = None):
+    """Send a single test email of a template to the user."""
+    from models.user import Template, TemplateAttachment, OAuthToken
+    from services.gmail_service import get_credentials, build_email_message
+    from api.signature import get_user_signature_html
+    import asyncio, re
+
+    # ── Load template ─────────────────────────────────────────────
+    result = await db.execute(
+        select(Template)
+        .options(selectinload(Template.attachments).selectinload(TemplateAttachment.attachment))
+        .where(Template.id == template_id)
+    )
+    template = result.scalar_one_or_none()
+    if not template:
+        raise ValueError("Template not found")
+
+    # ── Gmail credentials ─────────────────────────────────────────
+    creds = await get_credentials(user_id, db)
+    if not creds:
+        raise ValueError("No valid Gmail connection. Please connect Gmail first.")
+
+    # ── Sender email ──────────────────────────────────────────────
+    tok_result = await db.execute(
+        select(OAuthToken).where(OAuthToken.user_id == user_id, OAuthToken.is_valid == True)
+    )
+    oauth_token = tok_result.scalar_one_or_none()
+    sender_email = oauth_token.gmail_email if oauth_token else ""
+    
+    recipient = to_email or (oauth_token.gmail_email if oauth_token else None)
+    if not recipient:
+        raise ValueError("No recipient email found for test send.")
+
+    # ── Template data ─────────────────────────────────────────────
+    # Use dummy data for variables in test send
+    dummy_vars = {v: f"[{v}]" for v in (template.variables or ["name", "company"])}
+    
+    subject = substitute_variables(template.subject, dummy_vars)
+    body_html = substitute_variables(template.body_html, dummy_vars)
+    body_text = substitute_variables(template.body_text or "", dummy_vars)
+    
+    # Sanitize and add signature
+    body_html = sanitize_variable_spans(body_html)
+    # Add borders to tables for test
+    body_html = re.sub(r'<table\b([^>]*)>', r'<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; border: 1px solid #dddddd;" \1>', body_html, flags=re.IGNORECASE)
+    
+    sig_html = await get_user_signature_html(user_id, db)
+    if sig_html:
+        body_html += f'<br>{sig_html}'
+
+    # ── Attachments ───────────────────────────────────────────────
+    atts = []
+    for ta in template.attachments:
+        if ta.attachment:
+            a = ta.attachment
+            atts.append({
+                "file_path": a.file_path,
+                "original_filename": a.original_filename,
+                "mime_type": a.mime_type,
+            })
+
+    # ── Build and send ────────────────────────────────────────────
+    from services.gmail_service import build_email_message
+    raw_message = build_email_message(
+        sender=sender_email,
+        to=[recipient],
+        cc=[],
+        subject=f"[TEST] {subject}",
+        body_html=body_html,
+        body_text=body_text,
+        attachments=atts,
+        tracking_pixel_url=None # No tracking for test sends
+    )
+    
+    loop = asyncio.get_event_loop()
+    msg_id = await loop.run_in_executor(None, _send_via_gmail_sync, creds, raw_message)
+    return msg_id

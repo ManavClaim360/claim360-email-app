@@ -36,20 +36,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       if (tab === 'login' || tab === 'admin') {
-        // Use admin endpoint if admin login, regular endpoint for user
-        const endpoint = tab === 'admin' ? '/api/auth/admin/login' : '/api/auth/login'
-        const response = await api.post(endpoint, { 
-          email: form.email, 
-          password: form.password 
-        })
-        const { access_token, user_id, email, full_name, is_admin } = response.data
-        localStorage.setItem('mb_token', access_token)
-        localStorage.setItem('mb_user', JSON.stringify({ 
-          id: user_id, 
-          email, 
-          full_name, 
-          is_admin 
-        }))
+        const data = await login(form.email, form.password, tab === 'admin')
         navigate('/')
       } else if (tab === 'register') {
         if (form.password.length < 8) { toast.error('Password must be 8+ characters'); return }
@@ -70,6 +57,15 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDevLogin = (isAdmin = false) => {
+    setTab(isAdmin ? 'admin' : 'login')
+    setForm({
+      email: isAdmin ? 'admin@yourcompany.com' : 'user@example.com',
+      password: 'password123', // This should be a known test password
+    })
+    toast('Pre-filled test credentials', { icon: '🧪' })
   }
 
   return (
@@ -176,6 +172,15 @@ export default function LoginPage() {
                 (tab === 'login' || tab === 'admin') ? 'Sign In' : tab === 'register' ? 'Create Account' : 'Reset Password'}
             </button>
           </form>
+          
+          {/* Dev Helper */}
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px dashed var(--border)', textAlign: 'center' }}>
+            <p style={{ fontSize: 10, color: 'var(--subtext)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Quick Dev Login</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button onClick={() => handleDevLogin(false)} style={{ fontSize: 11, padding: '4px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>Test User</button>
+              <button onClick={() => handleDevLogin(true)} style={{ fontSize: 11, padding: '4px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>Admin User</button>
+            </div>
+          </div>
         </div>
 
         <p style={{ textAlign: 'center', color: 'var(--subtext)', fontSize: 11, marginTop: 20 }}>

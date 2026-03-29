@@ -261,3 +261,17 @@ async def _template_response(template: Template, db: AsyncSession) -> TemplateRe
             file_size=a.file_size, mime_type=a.mime_type, is_shared=a.is_shared
         ) for a in atts]
     )
+
+
+@router.post("/{template_id}/test-send")
+async def test_send_template(
+    template_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from services.email_service import send_test_email
+    try:
+        msg_id = await send_test_email(template_id, current_user.id, db)
+        return {"message": "Test email sent successfully", "gmail_id": msg_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

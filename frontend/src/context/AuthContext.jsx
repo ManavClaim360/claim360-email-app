@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { authApi } from '../utils/api'
+import { authApi, api } from '../utils/api'
 
 const AuthContext = createContext(null)
 
@@ -46,8 +46,11 @@ export function AuthProvider({ children }) {
     fetchMe() 
   }, [fetchMe])
 
-  const login = async (email, password) => {
-    const data = await authApi.login(email, password)
+  const login = async (email, password, isAdmin = false) => {
+    const data = isAdmin 
+      ? await api.post('/api/auth/admin/login', { email, password }).then(r => r.data)
+      : await authApi.login(email, password)
+      
     localStorage.setItem('mb_token', data.access_token)
     localStorage.setItem('mb_user', JSON.stringify(data))
     setUser(data)

@@ -3,8 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { templatesApi } from '../utils/api'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
-import {
-  Plus, Trash2, Save, Upload, FileText, Globe, Lock, Eye, EyeOff,
+import { Plus, Trash2, Save, Upload, FileText, Globe, Lock, Eye, EyeOff, Send,
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   List, Link, Smile, Minus, Code, Palette, Table, ChevronDown, X
 } from 'lucide-react'
@@ -629,6 +628,12 @@ export default function TemplatePage() {
     onSuccess: () => { toast.success('Attachment deleted'); qc.invalidateQueries(['attachments']) },
   })
 
+  const testSendMut = useMutation({
+    mutationFn: (id) => templatesApi.testSend(id),
+    onSuccess: () => toast.success('Test email sent! Check your inbox (or console in dev).'),
+    onError: (e) => toast.error(e?.response?.data?.detail || 'Test send failed'),
+  })
+
   const selectTemplate = t => {
     setSelected(t)
     setForm({ name: t.name, subject: t.subject, body_html: t.body_html || '', is_shared: t.is_shared })
@@ -666,9 +671,10 @@ export default function TemplatePage() {
   }
 
   const fmtSize = b => b > 1048576 ? `${(b/1048576).toFixed(1)}MB` : `${Math.round(b/1024)}KB`
-  const visibleTemplates = templates.filter(t =>
-    user?.is_admin || t.creator_id === user?.id || t.is_shared
-  )
+  const visibleTemplates = templates.filter(t => {
+    if (!user) return t.is_shared
+    return user.is_admin || t.creator_id === user.id || t.is_shared
+  })
 
   return (
     <div className="fade-in">
@@ -728,6 +734,15 @@ export default function TemplatePage() {
                 title={previewMode ? 'Back to editor' : 'Preview email in browser'}>
                 {previewMode ? <><EyeOff size={13} /> Editor</> : <><Eye size={13} /> Preview</>}
               </button>
+              {selected && (
+                <button className="btn-secondary" onClick={() => testSendMut.mutate(selected.id)}
+                  disabled={testSendMut.isPending}
+                  title="Send a sample of this email to yourself"
+                  style={{ fontSize: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5, color: 'var(--accent-lit)', borderColor: 'var(--accent-lit)' }}>
+                  {testSendMut.isPending ? <span className="spinner" style={{ width: 13, height: 13 }} /> : <Send size={13} />}
+                  Test Email
+                </button>
+              )}
               {selected && (
                 <button className="btn-danger" onClick={() => { if (confirm('Delete this template?')) deleteMut.mutate(selected.id) }}
                   title="Delete permanently" style={{ fontSize: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 4 }}>

@@ -79,6 +79,7 @@ export const templatesApi = {
     }).then(r => r.data)
   },
   deleteAttachment: (id) => api.delete(`/api/templates/attachments/${id}`).then(r => r.data),
+  testSend: (id) => api.post(`/api/templates/${id}/test-send`).then(r => r.data),
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
