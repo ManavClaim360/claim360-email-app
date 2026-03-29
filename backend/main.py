@@ -102,6 +102,34 @@ async def startup_event():
         logger.error(f"Database initialization FAILED: {str(e)}")
         logger.warning("App will continue - DB may initialize on next request.")
     
+    # Seed Admin user if variables are provided
+    if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
+        try:
+            from models.user import User
+            from core.auth import get_password_hash
+            from core.database import AsyncSessionLocal
+            
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(select(User).where(User.email == settings.ADMIN_EMAIL))
+                existing_admin = result.scalar_one_or_none()
+                
+                if not existing_admin:
+                    logger.info(f"🆕 Creating initial admin user: {settings.ADMIN_EMAIL}")
+                    new_admin = User(
+                        email=settings.ADMIN_EMAIL,
+                        full_name="System Administrator",
+                        hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+                        is_admin=True,
+                        is_active=True
+                    )
+                    session.add(new_admin)
+                    await session.commit()
+                    logger.info("✓ Admin user created successfully.")
+                else:
+                    logger.info(f"✓ Admin user already exists: {settings.ADMIN_EMAIL}")
+        except Exception as e:
+            logger.error(f"Failed to seed admin user: {str(e)}")
+
     logger.info("=" * 60)
     logger.info(f"✓ Startup complete - API ready to serve requests")
     logger.info(f"Allowed Origins: {allow_origins}")
