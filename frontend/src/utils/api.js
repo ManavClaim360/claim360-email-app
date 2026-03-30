@@ -11,16 +11,15 @@ if (parsedEnvUrl && !parsedEnvUrl.startsWith('http')) {
   parsedEnvUrl = 'https://' + parsedEnvUrl;
 }
 
-// In production, BASE_URL MUST be provided. If not, it will default to empty (current origin),
-// but we will warn the user about the missing Backend variable.
-const BASE_URL = parsedEnvUrl?.trim().replace(/\/$/, '') || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-if (import.meta.env.PROD) {
-  console.log("🚀 Claim360 API Base URL:", BASE_URL || "(Self-hosted/Relative)")
-  if (!parsedEnvUrl) {
-    console.error("⚠️ PRODUCTION WARNING: VITE_API_URL is missing. Ensure it is set in the Render Static Site environment (e.g., https://your-api.onrender.com).")
-  }
+// Enforce explicit API URL for all environments (no localhost fallback)
+const BASE_URL = parsedEnvUrl?.trim().replace(/\/$/, '') || ''
+
+if (!parsedEnvUrl) {
+  console.error("❌ ERROR: VITE_API_URL is missing. Please set it in your environment (e.g., https://your-api.onrender.com). Frontend will not work without it.")
 }
+
+console.log("🚀 Claim360 API Base URL:", BASE_URL || "(No API URL set!)")
 
 
 export const api = axios.create({
