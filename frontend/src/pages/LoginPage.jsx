@@ -68,36 +68,6 @@ export default function LoginPage() {
     </div>
   )
 }
-            width: 52, height: 52, borderRadius: 14,
-            background: 'linear-gradient(135deg, var(--accent2), var(--accent))',
-            marginBottom: 14,
-          }}>
-            <Mail size={24} color="white" />
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: -0.5 }}>Claim360</h1>
-          <p style={{ color: 'var(--subtext)', fontSize: 13, marginTop: 4 }}>Bulk Email Intelligence Platform</p>
-        </div>
-
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 32 }}>
-          {/* Tabs */}
-          <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 8, padding: 3, marginBottom: 24, gap: 2 }}>
-            {['login', 'admin', 'register', 'forgot'].map(t => (
-              <button type="button" key={t} onClick={() => { setTab(t); setOtpSent(false) }} style={{
-                flex: 1, padding: '7px 0', borderRadius: 6, border: 'none',
-                fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-                background: tab === t ? 'var(--card)' : 'transparent',
-                color: tab === t ? 'var(--accent)' : 'var(--subtext)',
-                boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-              }}>
-                {t === 'login' ? 'User' : t === 'admin' ? 'Admin' : t === 'register' ? 'Register' : 'Reset'}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {tab === 'register' && (
-              <div className="form-row">
-                <label>Full Name</label>
                 <input value={form.full_name} onChange={set('full_name')} placeholder="Your name" required />
               </div>
             )}
