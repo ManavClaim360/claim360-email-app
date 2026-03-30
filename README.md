@@ -2,7 +2,7 @@
 
 A production-grade, team-based bulk email platform with:
 - **Desktop client** (.exe) — PyQt6 with hamburger menu navigation
-- **Backend API** — Python FastAPI on Vercel
+- **Backend API** — Python FastAPI
 - **Database** — PostgreSQL (all tracking, logs, templates, users)
 - **Gmail integration** — OAuth 2.0 per-user authentication
 - **Email tracking** — open tracking via pixel, live campaign status
@@ -14,7 +14,7 @@ A production-grade, team-based bulk email platform with:
 
 ```
 claim360/
-├── backend/                  # FastAPI backend (deploy to Vercel)
+├── backend/                  # FastAPI backend
 │   ├── main.py               # App entrypoint, router registration, DB init
 │   ├── core/
 │   │   ├── config.py         # Settings from .env
@@ -44,7 +44,7 @@ claim360/
 ├── scripts/
 │   └── init_db.py            # Create tables + seed admin user
 │
-└── vercel.json               # Vercel deployment config
+
 ```
 
 ---
@@ -58,7 +58,7 @@ claim360/
 | Python | 3.11+ | Backend and desktop |
 | PostgreSQL | 14+ | Local or cloud (Neon, Supabase, Railway) |
 | Redis | 6+ | Optional — for Celery; not required for basic sending |
-| Node.js | — | Not needed |
+
 
 ---
 
@@ -72,7 +72,7 @@ claim360/
    APIs & Services → Credentials → Create → OAuth Client ID → Web application
 5. Add authorized redirect URIs:
    - `http://localhost:8000/api/auth/oauth/callback` (local dev)
-   - `https://your-app.vercel.app/api/auth/oauth/callback` (production)
+   - `https://your-backend-domain.com/api/auth/oauth/callback` (production)
 6. Copy your **Client ID** and **Client Secret**
 
 ---
@@ -262,7 +262,7 @@ pyinstaller claim360.spec
 #         dist/Claim360     (macOS/Linux)
 ```
 
-Distribute `Claim360.exe` to team members. They only need to set `MAILBLAST_API_URL` pointing to your Vercel deployment.
+Distribute `Claim360.exe` to team members. They only need to set `MAILBLAST_API_URL` pointing to your backend deployment.
 
 ---
 
