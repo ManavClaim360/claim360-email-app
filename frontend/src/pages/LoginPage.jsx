@@ -1,59 +1,27 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { Mail, Eye, EyeOff } from 'lucide-react'
-import toast from 'react-hot-toast'
+import axios from 'axios'
 
-import { authApi, api } from '../utils/api'
+// Get API URL from Vite env
+const API_URL = import.meta.env.VITE_API_URL
 
 export default function LoginPage() {
-  const [tab, setTab] = useState('login')
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', otp: '' })
-  const [otpSent, setOtpSent] = useState(false)
-  const [otpLoading, setOtpLoading] = useState(false)
-  const [showPw, setShowPw] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login, register } = useAuth()
-  const navigate = useNavigate()
-
-  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
-
-  const handleSendOtp = async (purpose) => {
-    if (!form.email) { toast.error('Please enter your email first'); return }
-    setOtpLoading(true)
-    try {
-      await authApi.sendOtp(form.email, purpose)
-      setOtpSent(true)
-      toast.success('OTP sent to your email!')
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Failed to send OTP')
-    }
-    setOtpLoading(false)
-  }
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
     try {
-      if (tab === 'login' || tab === 'admin') {
-        const data = await login(form.email, form.password, tab === 'admin')
-        navigate('/')
-      } else if (tab === 'register') {
-        if (form.password.length < 8) { toast.error('Password must be 8+ characters'); return }
-        if (!form.otp) { toast.error('OTP is required'); return }
-        await register(form.email, form.full_name, form.password, form.otp)
-        navigate('/')
-      } else if (tab === 'forgot') {
-        if (form.password.length < 8) { toast.error('Password must be 8+ characters'); return }
-        if (!form.otp) { toast.error('OTP is required'); return }
-        await authApi.resetPassword(form.email, form.otp, form.password)
-        toast.success('Password reset successfully! Please sign in.')
-        setTab('login')
-        setForm(f => ({ ...f, password: '', otp: '' }))
-        setOtpSent(false)
-      }
+      const res = await axios.post(`${API_URL}/api/auth/login`, { email, password })
+      const { access_token, ...user } = res.data
+      localStorage.setItem('mb_token', access_token)
+      localStorage.setItem('mb_user', JSON.stringify(user))
+      window.location.href = '/'
     } catch (err) {
-      // error toast handled by axios interceptor
+      setError(err?.response?.data?.detail || 'Login failed')
     } finally {
       setLoading(false)
     }
@@ -61,23 +29,45 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: 'var(--bg)',
+      minHeight: '100vh', background: '#f7f7fa',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20,
     }}>
-      {/* Background grid */}
-      <div style={{
-        position: 'fixed', inset: 0, opacity: 0.04,
-        backgroundImage: 'linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
-        pointerEvents: 'none',
-      }} />
-
-      <div className="fade-in" style={{ width: '100%', maxWidth: 400, position: 'relative' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      <div style={{ width: '100%', maxWidth: 400, background: '#fff', borderRadius: 8, boxShadow: '0 2px 16px #0001', padding: 32 }}>
+        <h2 style={{ textAlign: 'center', marginBottom: 24 }}>Sign In</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              style={{ width: '100%', padding: 8, marginTop: 4 }}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ width: '100%', padding: 8, marginTop: 4 }}
+            />
+          </div>
+          {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
+          <button type="submit" style={{ width: '100%', padding: 10 }} disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+        <div style={{ marginTop: 16, fontSize: 12, color: '#888' }}>
+          API URL: <span style={{ color: '#333' }}>{API_URL || 'Not set'}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
             width: 52, height: 52, borderRadius: 14,
             background: 'linear-gradient(135deg, var(--accent2), var(--accent))',
             marginBottom: 14,
