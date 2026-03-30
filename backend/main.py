@@ -23,7 +23,13 @@ from api.templates import router as templates_router
 from api.signature import router as signature_router
 from api.data import router as data_router
 from api.tracking import tracking_router, admin_router as tracking_admin_router
-from core.database import get_db, init_db
+from core.database import get_db, init_db, AsyncSessionLocal
+from core.config import get_settings
+from core.auth import get_password_hash
+from models.user import User
+from sqlalchemy import select
+
+settings = get_settings()
 import traceback
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -73,31 +79,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 async def startup_event():
-    from core.config import get_settings
-    logger.info("=" * 60)
-    logger.info("🚀 Starting up Claim360 API...")
-    logger.info("=" * 60)
-    
-    # Load and verify configuration
+    logger.info("Starting up Claim360 API...")
     try:
-        settings = get_settings()
-        logger.info("✓ Configuration loaded successfully")
-        
-        # Detect environment
-        import os
-        is_vercel = "VERCEL" in os.environ or "VERCEL_URL" in os.environ
-        env_name = "VERCEL" if is_vercel else "LOCAL"
-        logger.info(f"Environment: {env_name}")
-    except Exception as e:
-        logger.error(f"Configuration loading failed: {str(e)}")
-    
-    # Initialize database
-    try:
-        result = await init_db()
-        if result:
-            logger.info("✓ Database initialized successfully.")
-        else:
-            logger.warning("Database initialization skipped - may be already initialized.")
+        await init_db()
+        logger.info("Database initialized successfully.")
     except Exception as e:
         logger.error(f"Database initialization FAILED: {str(e)}")
         logger.warning("App will continue - DB may initialize on next request.")
