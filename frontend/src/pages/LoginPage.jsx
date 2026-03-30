@@ -7,6 +7,7 @@ import { authApi, api } from '../utils/api'
 
 export default function LoginPage() {
   const [tab, setTab] = useState('login')
+  const [showForgot, setShowForgot] = useState(false)
   const [form, setForm] = useState({ email: '', password: '', full_name: '', otp: '' })
   const [otpSent, setOtpSent] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
@@ -34,22 +35,14 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      if (tab === 'login' || tab === 'admin') {
-        const data = await login(form.email, form.password, tab === 'admin')
+      if (tab === 'login') {
+        await login(form.email, form.password)
         navigate('/')
       } else if (tab === 'register') {
         if (form.password.length < 8) { toast.error('Password must be 8+ characters'); return }
         if (!form.otp) { toast.error('OTP is required'); return }
         await register(form.email, form.full_name, form.password, form.otp)
         navigate('/')
-      } else if (tab === 'forgot') {
-        if (form.password.length < 8) { toast.error('Password must be 8+ characters'); return }
-        if (!form.otp) { toast.error('OTP is required'); return }
-        await authApi.resetPassword(form.email, form.otp, form.password)
-        toast.success('Password reset successfully! Please sign in.')
-        setTab('login')
-        setForm(f => ({ ...f, password: '', otp: '' }))
-        setOtpSent(false)
       }
     } catch (err) {
       // error toast handled by axios interceptor
@@ -89,22 +82,22 @@ export default function LoginPage() {
 
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 32 }}>
           {/* Tabs */}
-          <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 8, padding: 3, marginBottom: 24, gap: 2 }}>
-            {['login', 'admin', 'register', 'forgot'].map(t => (
+          <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 8, padding: 3, marginBottom: 24 }}>
+            {['login', 'register', 'forgot'].map(t => (
               <button type="button" key={t} onClick={() => { setTab(t); setOtpSent(false) }} style={{
                 flex: 1, padding: '7px 0', borderRadius: 6, border: 'none',
-                fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
                 background: tab === t ? 'var(--card)' : 'transparent',
                 color: tab === t ? 'var(--accent)' : 'var(--subtext)',
                 boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
               }}>
-                {t === 'login' ? 'User' : t === 'admin' ? 'Admin' : t === 'register' ? 'Register' : 'Reset'}
+                {t === 'login' ? 'Sign In' : t === 'register' ? 'Register' : 'Reset Pw'}
               </button>
             ))}
           </div>
 
           <form onSubmit={handleSubmit}>
-            {tab === 'register' && (
+            {!showForgot && tab === 'register' && (
               <div className="form-row">
                 <label>Full Name</label>
                 <input value={form.full_name} onChange={set('full_name')} placeholder="Your name" required />
@@ -116,34 +109,34 @@ export default function LoginPage() {
                 🔒 Admin Login
               </div>
             )}
-            
+
             <div className="form-row">
               <label>Email Address</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input type="email" value={form.email} onChange={set('email')} placeholder="you@company.com" required style={{ flex: 1 }} />
-                {(tab === 'register' || tab === 'forgot') && (
-                  <button type="button" className="btn-secondary" onClick={() => handleSendOtp(tab === 'register' ? 'register' : 'reset')} disabled={otpLoading} style={{ padding: '0 12px', fontSize: 12 }}>
+                <input type="email" value={form.email} onChange={set('email')} placeholder={tab === 'admin' ? 'admin@company.com' : 'you@company.com'} required style={{ flex: 1 }} />
+                {(showForgot || (!showForgot && tab === 'register')) && (
+                  <button type="button" className="btn-secondary" onClick={() => handleSendOtp(showForgot ? 'reset' : 'register')} disabled={otpLoading} style={{ padding: '0 12px', fontSize: 12 }}>
                     {otpLoading ? 'Sending...' : otpSent ? 'Resend' : 'Send OTP'}
                   </button>
                 )}
               </div>
             </div>
-            
-            {(tab === 'register' || tab === 'forgot') && otpSent && (
+
+            {(showForgot || (!showForgot && tab === 'register')) && otpSent && (
               <div className="form-row fade-in">
                 <label>OTP Code</label>
                 <input value={form.otp} onChange={set('otp')} placeholder="123456" required maxLength={6} style={{ letterSpacing: 2, fontWeight: 'bold' }} />
               </div>
             )}
 
-            {(tab !== 'forgot' || otpSent) && (
+            {(!showForgot || otpSent) && (
               <div className="form-row" style={{ position: 'relative' }}>
-                <label>{tab === 'forgot' ? 'New Password' : 'Password'}</label>
+                <label>{showForgot ? 'New Password' : 'Password'}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPw ? 'text' : 'password'}
                     value={form.password} onChange={set('password')}
-                    placeholder={tab === 'register' || tab === 'forgot' ? 'Min 8 characters' : '••••••••'}
+                    placeholder={showForgot || tab === 'register' ? 'Min 8 characters' : '••••••••'}
                     required style={{ paddingRight: 40, width: '100%' }}
                   />
                   <button type="button" onClick={() => setShowPw(s => !s)} style={{
@@ -159,9 +152,26 @@ export default function LoginPage() {
             <button type="submit" className="btn-primary" disabled={loading}
               style={{ width: '100%', padding: '11px', marginTop: 8, fontSize: 14, background: tab === 'admin' ? 'linear-gradient(135deg, #ff8c00, #ff6b35)' : undefined }}>
               {loading ? <span className="spinner" style={{ width: 16, height: 16 }} /> :
-                (tab === 'login' || tab === 'admin') ? 'Sign In' : tab === 'register' ? 'Create Account' : 'Reset Password'}
+                tab === 'login' ? 'Sign In' : tab === 'register' ? 'Create Account' : 'Reset Password'}
             </button>
           </form>
+
+          {/* BELOW THE FORM CONTROLS */}
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            {showForgot ? (
+              <button type="button" onClick={() => { setShowForgot(false); setOtpSent(false); }} style={{
+                background: 'none', border: 'none', color: 'var(--subtext)', fontSize: 12, cursor: 'pointer', textDecoration: 'none'
+              }}>
+                ← Back to Login
+              </button>
+            ) : (
+              <button type="button" onClick={() => { setShowForgot(true); setOtpSent(false); }} style={{
+                background: 'none', border: 'none', color: 'var(--subtext)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline'
+              }}>
+                Forgot Password?
+              </button>
+            )}
+          </div>
         </div>
 
         <p style={{ textAlign: 'center', color: 'var(--subtext)', fontSize: 11, marginTop: 20 }}>
