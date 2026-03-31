@@ -14,17 +14,17 @@ from passlib.context import CryptContext
 settings = get_settings()
 security = HTTPBearer()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use pbkdf2_sha256 as primary to avoid the 72-byte bcrypt limit.
+# Leave bcrypt in the list so old hashes still work.
+pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Bcrypt has a 72-byte limit. We truncate to prevent crashes.
-    return pwd_context.verify(plain_password[:72], hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    # Bcrypt has a 72-byte limit. We truncate to prevent crashes.
-    return pwd_context.hash(password[:72])
+    return pwd_context.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
