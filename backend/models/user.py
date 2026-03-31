@@ -246,3 +246,12 @@ class OAuthState(Base):
     state = Column(String(255), unique=True, nullable=False, index=True)
     user_id = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AppSettings(Base):
+    """Global application settings — single-row table."""
+    __tablename__ = "app_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    registrations_open = Column(Boolean, default=False, nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

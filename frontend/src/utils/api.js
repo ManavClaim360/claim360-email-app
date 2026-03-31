@@ -54,6 +54,7 @@ api.interceptors.response.use(
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
+  // Unified login — backend auto-detects admin vs user
   login: (email, password) =>
     api.post('/api/auth/login', { email, password }).then(r => r.data),
   sendOtp: (email, purpose) =>
@@ -65,6 +66,7 @@ export const authApi = {
   me: () => api.get('/api/auth/me').then(r => r.data),
   oauthUrl: () => api.get('/api/auth/oauth/url').then(r => r.data),
   disconnect: () => api.delete('/api/auth/oauth/disconnect').then(r => r.data),
+  registrationsStatus: () => api.get('/api/auth/registrations-status').then(r => r.data),
 }
 
 // ── Templates ─────────────────────────────────────────────────────────────────
@@ -121,6 +123,8 @@ export const adminApi = {
   toggleActive: (id) => api.put(`/api/admin/users/${id}/toggle-active`).then(r => r.data),
   allCampaigns: () => api.get('/api/admin/campaigns').then(r => r.data),
   allSignatures: () => api.get('/api/signatures/admin/all').then(r => r.data),
+  getSettings: () => api.get('/api/admin/settings').then(r => r.data),
+  updateSettings: (data) => api.put('/api/admin/settings', data).then(r => r.data),
 }
 
 // ── Admin user CRUD (added) ───────────────────────────────────────────────

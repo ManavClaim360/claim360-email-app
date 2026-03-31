@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi, adminUserApi } from '../utils/api'
-import { ShieldCheck, Users, BarChart2, Mail, RefreshCw, UserCheck, UserX, Plus, Edit2, Trash2, X, Eye, EyeOff, PenTool } from 'lucide-react'
+import { ShieldCheck, Users, BarChart2, Mail, RefreshCw, UserCheck, UserX, Plus, Edit2, Trash2, X, Eye, EyeOff, PenTool, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import SignaturePage from './SignaturePage'
@@ -111,6 +111,20 @@ export default function AdminPage() {
   const toggleAdminMut  = useMutation({ mutationFn: adminApi.toggleAdmin,  onSuccess: () => qc.invalidateQueries(['admin-users']) })
   const toggleActiveMut = useMutation({ mutationFn: adminApi.toggleActive, onSuccess: () => qc.invalidateQueries(['admin-users']) })
 
+  const { data: appSettings, refetch: refetchSettings } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: adminApi.getSettings,
+    enabled: tab === 'settings',
+  })
+  const settingsMut = useMutation({
+    mutationFn: adminApi.updateSettings,
+    onSuccess: (d) => {
+      toast.success(d.registrations_open ? 'Registrations opened ✓' : 'Registrations closed ✓')
+      qc.invalidateQueries(['admin-settings'])
+    },
+    onError: e => toast.error(e?.response?.data?.detail || 'Failed to update settings'),
+  })
+
   const STATUS_COLORS = { completed: 'var(--success)', running: 'var(--warning)', failed: 'var(--error)', draft: 'var(--subtext)' }
 
   const TABS = [
@@ -118,6 +132,7 @@ export default function AdminPage() {
     { id: 'users',      label: '👥 Users' },
     { id: 'campaigns',  label: '✉ All Campaigns' },
     { id: 'signatures', label: '🖋 Signatures' },
+    { id: 'settings',   label: '⚙ Settings' },
   ]
 
   if (modal?.type === 'signature') {
@@ -348,6 +363,69 @@ export default function AdminPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Settings ── */}
+      {tab === 'settings' && (
+        <div style={{ maxWidth: 480 }}>
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <Settings size={16} color="#b97cf9" />
+              <h3 style={{ fontSize: 15, fontWeight: 700 }}>Platform Settings</h3>
+            </div>
+
+            {/* Registration toggle */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 18px', borderRadius: 8,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+            }}>
+              <div>
+                <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>Allow User Registrations</p>
+                <p style={{ fontSize: 12, color: 'var(--subtext)', lineHeight: 1.5 }}>
+                  When enabled, new users can sign up via the login page.<br />
+                  Disable to lock down the platform.
+                </p>
+              </div>
+              <div style={{ marginLeft: 20, flexShrink: 0 }}>
+                {appSettings === undefined ? (
+                  <span className="spinner" style={{ width: 18, height: 18 }} />
+                ) : (
+                  <button
+                    id="btn-toggle-registrations"
+                    type="button"
+                    onClick={() => settingsMut.mutate({ registrations_open: !appSettings.registrations_open })}
+                    disabled={settingsMut.isPending}
+                    style={{
+                      position: 'relative',
+                      width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                      background: appSettings.registrations_open ? 'var(--success)' : 'rgba(255,255,255,0.15)',
+                      transition: 'background 0.2s',
+                      padding: 0,
+                    }}
+                    title={appSettings.registrations_open ? 'Click to disable registrations' : 'Click to enable registrations'}
+                  >
+                    <span style={{
+                      position: 'absolute', top: 3,
+                      left: appSettings.registrations_open ? 25 : 3,
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: '#fff',
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                    }} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <p style={{ fontSize: 11, color: 'var(--subtext)', marginTop: 10 }}>
+              Current status:{' '}
+              <strong style={{ color: appSettings?.registrations_open ? 'var(--success)' : 'var(--error)' }}>
+                {appSettings?.registrations_open ? 'Open — users can register' : 'Closed — registration disabled'}
+              </strong>
+            </p>
           </div>
         </div>
       )}

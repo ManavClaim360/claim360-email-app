@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { authApi, api } from '../utils/api'
+import { authApi } from '../utils/api'
 
 const AuthContext = createContext(null)
 
@@ -12,45 +12,30 @@ export function AuthProvider({ children }) {
 
   const fetchMe = useCallback(async () => {
     const token = localStorage.getItem('mb_token')
-    if (!token) { 
-      console.log('[AUTH] No token, user is logged out')
+    if (!token) {
       setLoading(false)
-      return 
+      return
     }
-    
-    console.log('[AUTH] Fetching user info from /api/auth/me')
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-      
       const me = await authApi.me()
-      clearTimeout(timeout)
-      console.log('[AUTH] ✓ Got user:', me.email)
       setUser(me)
       localStorage.setItem('mb_user', JSON.stringify(me))
       setError(null)
     } catch (err) {
-      console.error('[AUTH] ❌ Failed to fetch user:', err.message)
       setError(err.message)
       localStorage.removeItem('mb_token')
       localStorage.removeItem('mb_user')
       setUser(null)
     } finally {
-      console.log('[AUTH] Done loading')
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => { 
-    console.log('[AUTH] Provider mounted, running fetchMe')
-    fetchMe() 
-  }, [fetchMe])
+  useEffect(() => { fetchMe() }, [fetchMe])
 
-  const login = async (email, password, isAdmin = false) => {
-    const data = isAdmin 
-      ? await api.post('/api/auth/admin/login', { email, password }).then(r => r.data)
-      : await authApi.login(email, password)
-      
+  /** Unified login — backend returns is_admin automatically */
+  const login = async (email, password) => {
+    const data = await authApi.login(email, password)
     localStorage.setItem('mb_token', data.access_token)
     localStorage.setItem('mb_user', JSON.stringify(data))
     setUser(data)
@@ -81,4 +66,3 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext)
-

@@ -9,7 +9,7 @@ import base64
 from core.database import get_db
 from services.email_service import record_open
 from core.auth import get_current_admin, get_password_hash
-from models.user import User, Campaign, EmailLog, EmailStatus
+from models.user import User, Campaign, EmailLog, EmailStatus, AppSettings
 
 tracking_router = APIRouter(prefix="/api/track", tags=["tracking"])
 admin_router    = APIRouter(prefix="/api/admin",  tags=["admin"])
@@ -133,6 +133,38 @@ async def toggle_active(user_id: int, admin: User = Depends(get_current_admin), 
     if not user: raise HTTPException(status_code=404, detail="User not found")
     user.is_active = not user.is_active; await db.commit()
     return {"id": user.id, "is_active": user.is_active}
+
+
+# ── Admin: app settings (registration toggle) ───────────────────────────
+class AppSettingsUpdate(BaseModel):
+    registrations_open: bool
+
+@admin_router.get("/settings")
+async def get_admin_settings(admin: User = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AppSettings))
+    row = result.scalars().first()
+    if not row:
+        row = AppSettings(registrations_open=False)
+        db.add(row)
+        await db.commit()
+        await db.refresh(row)
+    return {"registrations_open": row.registrations_open}
+
+@admin_router.put("/settings")
+async def update_admin_settings(
+    data: AppSettingsUpdate,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(AppSettings))
+    row = result.scalars().first()
+    if not row:
+        row = AppSettings(registrations_open=data.registrations_open)
+        db.add(row)
+    else:
+        row.registrations_open = data.registrations_open
+    await db.commit()
+    return {"registrations_open": row.registrations_open, "message": "Settings updated"}
 
 
 # ── Admin: all campaigns ──────────────────────────────────────────────────

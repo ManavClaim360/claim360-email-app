@@ -26,7 +26,7 @@ from api.tracking import tracking_router, admin_router as tracking_admin_router
 from core.database import get_db, init_db, AsyncSessionLocal
 from core.config import get_settings
 from core.auth import get_password_hash
-from models.user import User
+from models.user import User, AppSettings
 from sqlalchemy import select
 
 settings = get_settings()
@@ -115,6 +115,17 @@ async def startup_event():
                     logger.info(f"✓ Admin user exists: {admin_email_lower}")
         except Exception as e:
             logger.error(f"Failed to seed admin user: {str(e)}")
+
+    # Seed default AppSettings row (registration toggle) if absent
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(AppSettings))
+            if not result.scalars().first():
+                session.add(AppSettings(registrations_open=False))
+                await session.commit()
+                logger.info("✓ AppSettings row created (registrations_open=False by default)")
+    except Exception as e:
+        logger.error(f"Failed to seed AppSettings: {str(e)}")
 
     logger.info("=" * 60)
     logger.info(f"✓ Startup complete - API ready to serve requests")
