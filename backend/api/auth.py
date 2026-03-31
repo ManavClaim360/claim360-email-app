@@ -109,8 +109,13 @@ async def _get_or_create_settings(db: AsyncSession) -> AppSettings:
 @router.get("/registrations-status")
 async def registrations_status(db: AsyncSession = Depends(get_db)):
     """Public endpoint — lets the login page know if sign-up is allowed."""
-    app_cfg = await _get_or_create_settings(db)
-    return {"open": app_cfg.registrations_open}
+    try:
+        app_cfg = await _get_or_create_settings(db)
+        return {"open": app_cfg.registrations_open}
+    except Exception as e:
+        logger.error(f"Error fetching registrations-status: {str(e)}")
+        # If DB not ready yet, default to closed for safety
+        return {"open": False}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -119,36 +124,44 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     Unified login for both admins and regular users.
     The backend auto-detects role — no separate admin endpoint needed.
     """
-    email_lower = data.email.lower().strip()
-    result = await db.execute(select(User).where(User.email == email_lower))
-    user = result.scalar_one_or_none()
+    try:
+        email_lower = data.email.lower().strip()
+        result = await db.execute(select(User).where(User.email == email_lower))
+        user = result.scalar_one_or_none()
 
-    if not user or not verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account deactivated. Contact your admin.")
+        if not user or not verify_password(data.password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Account deactivated. Contact your admin.")
 
-    # Force Gmail re-connect on every login (security)
-    tok_result = await db.execute(select(OAuthToken).where(OAuthToken.user_id == user.id))
-    existing_token = tok_result.scalar_one_or_none()
-    if existing_token:
-        existing_token.is_valid = False
-        await db.commit()
+        # Force Gmail re-connect on every login (security)
+        tok_result = await db.execute(select(OAuthToken).where(OAuthToken.user_id == user.id))
+        existing_token = tok_result.scalar_one_or_none()
+        if existing_token:
+            existing_token.is_valid = False
+            await db.commit()
 
-    if user.is_admin:
-        logger.info(f"Admin login: {email_lower}")
-    else:
-        logger.info(f"User login: {email_lower}")
+        if user.is_admin:
+            logger.info(f"Admin login: {email_lower}")
+        else:
+            logger.info(f"User login: {email_lower}")
 
-    token = create_access_token({"sub": str(user.id)})
-    return TokenResponse(
-        access_token=token,
-        token_type="bearer",
-        id=user.id,
-        email=user.email,
-        full_name=user.full_name,
-        is_admin=user.is_admin,
-    )
+        token = create_access_token({"sub": str(user.id)})
+        return TokenResponse(
+            access_token=token,
+            token_type="bearer",
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            is_admin=user.is_admin,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"LOGIN CRASH: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Database error or server crash: {str(e)}")
 
 
 @router.post("/send-otp")

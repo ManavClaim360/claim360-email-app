@@ -124,8 +124,13 @@ async def startup_event():
                 session.add(AppSettings(registrations_open=False))
                 await session.commit()
                 logger.info("✓ AppSettings row created (registrations_open=False by default)")
+            else:
+                logger.info("✓ AppSettings row exists.")
     except Exception as e:
-        logger.error(f"Failed to seed AppSettings: {str(e)}")
+        logger.error(f"⚠️ AppSettings seeding FAILED: {str(e)}")
+        logger.error(traceback.format_exc())
+        # We don't crash startup - the app should still run even if settings are missing
+
 
     logger.info("=" * 60)
     logger.info(f"✓ Startup complete - API ready to serve requests")
