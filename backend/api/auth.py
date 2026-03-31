@@ -129,8 +129,20 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
         result = await db.execute(select(User).where(User.email == email_lower))
         user = result.scalar_one_or_none()
 
-        if not user or not verify_password(data.password, user.hashed_password):
+        # NEW: Safety check for password verification
+        try:
+            is_valid = verify_password(data.password, user.hashed_password)
+        except Exception as auth_err:
+            logger.error(f"AUTH DRIVER CRASH for {email_lower}: {str(auth_err)}")
+            # This happens if Bcrypt hits a length limit or corrupted hash in DB
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Security module error: {str(auth_err)}. This usually means the password is too long or the stored hash is invalid."
+            )
+
+        if not is_valid:
             raise HTTPException(status_code=401, detail="Invalid email or password")
+        
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Account deactivated. Contact your admin.")
 
