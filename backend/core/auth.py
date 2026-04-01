@@ -11,22 +11,15 @@ from core.database import get_db
 
 from passlib.context import CryptContext
 
-settings = get_settings()
-security = HTTPBearer()
-
-# Use pbkdf2_sha256 as primary to avoid the 72-byte bcrypt limit.
-# Leave bcrypt in the list so old hashes still work.
-pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
-
-
+# --- PLAIN TEXT AUTH FOR INTERNAL TOOL ---
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Bcrypt (if detected in the hash) has a 72-byte limit. We truncate to prevent crashes.
-    return pwd_context.verify(plain_password[:72], hashed_password)
+    # Direct comparison as requested
+    return plain_password == hashed_password
 
 
 def get_password_hash(password: str) -> str:
-    # We still truncate here for consistency, though PBKDF2 doesn't technically need it.
-    return pwd_context.hash(password[:72])
+    # No hashing — return raw password
+    return password
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
