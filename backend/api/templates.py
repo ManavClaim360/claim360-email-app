@@ -177,8 +177,13 @@ async def upload_attachment(
     if file.size and file.size > settings.MAX_ATTACHMENT_SIZE_MB * 1024 * 1024:
         raise HTTPException(status_code=413, detail=f"File exceeds {settings.MAX_ATTACHMENT_SIZE_MB}MB limit")
 
+    # ── Sanitise filename (prevent path traversal) ────────────────
+    safe_original = os.path.basename(file.filename or "upload")
+    # Strip any remaining dangerous characters
+    safe_original = safe_original.replace("\x00", "").replace("/", "_").replace("\\", "_")
+
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    ext = os.path.splitext(file.filename)[1]
+    ext = os.path.splitext(safe_original)[1]
     stored_name = f"{uuid.uuid4()}{ext}"
     file_path = os.path.join(settings.UPLOAD_DIR, stored_name)
 
@@ -186,12 +191,23 @@ async def upload_attachment(
         shutil.copyfileobj(file.file, f)
 
     file_size = os.path.getsize(file_path)
+
+    # ── Server-side MIME detection (content-based, not just extension) ─
     import mimetypes
-    mime = mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+    try:
+        import magic  # python-magic for content-based detection
+        detected_mime = magic.from_file(file_path, mime=True)
+    except ImportError:
+        # Fallback to extension-based if python-magic not installed
+        detected_mime = mimetypes.guess_type(safe_original)[0] or "application/octet-stream"
+    except Exception:
+        detected_mime = mimetypes.guess_type(safe_original)[0] or "application/octet-stream"
+
+    mime = detected_mime
 
     att = Attachment(
         filename=stored_name,
-        original_filename=file.filename,
+        original_filename=safe_original,
         file_path=file_path,
         file_size=file_size,
         mime_type=mime,

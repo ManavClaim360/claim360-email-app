@@ -129,20 +129,28 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
         result = await db.execute(select(User).where(User.email == email_lower))
         user = result.scalar_one_or_none()
 
-        # NEW: Safety check for password verification
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+
+        # Safety check for password verification
         try:
             is_valid = verify_password(data.password, user.hashed_password)
         except Exception as auth_err:
             logger.error(f"AUTH DRIVER CRASH for {email_lower}: {str(auth_err)}")
-            # This happens if Bcrypt hits a length limit or corrupted hash in DB
             raise HTTPException(
-                status_code=500, 
-                detail=f"Security module error: {str(auth_err)}. This usually means the password is too long or the stored hash is invalid."
+                status_code=500,
+                detail="Authentication error — please contact your administrator.",
+                headers={"X-Error-Code": "AUTH_DRIVER_ERROR"},
             )
 
         if not is_valid:
             raise HTTPException(status_code=401, detail="Invalid email or password")
-        
+
+        # Auto-rehash legacy plain-text passwords to bcrypt on successful login
+        if not user.hashed_password.startswith("$2"):
+            user.hashed_password = get_password_hash(data.password)
+            logger.info(f"Rehashed legacy password for {email_lower}")
+
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Account deactivated. Contact your admin.")
 
@@ -173,7 +181,7 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
         logger.error(f"LOGIN CRASH: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Database error or server crash: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again later.")
 
 
 @router.post("/send-otp")
@@ -211,7 +219,7 @@ async def send_otp(
 
     if not sys_email or not sys_pass:
         logger.warning(f"--- OTP FOR {email_lower} ({data.purpose}): {code} (SMTP not configured) ---")
-        return {"message": f"OTP printed to server console (SMTP not configured). Code: {code}"}
+        return {"message": "OTP generated (SMTP not configured — check server logs)"}
 
     background_tasks.add_task(send_otp_email_task, email_lower, data.purpose, code, sys_email, sys_pass)
     return {"message": "OTP sent to your email"}

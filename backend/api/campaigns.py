@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Request, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 import asyncio
 import json
 
-from core.database import get_db
+from core.database import get_db, AsyncSessionLocal
 from core.auth import get_current_user
 from models.user import Campaign, Contact, CustomVariable, EmailLog, User, EmailStatus
 from services.email_service import send_campaign
@@ -136,6 +136,8 @@ async def get_campaign_logs(
     campaign_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=500),
 ):
     # Verify ownership
     result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
@@ -143,10 +145,13 @@ async def get_campaign_logs(
     if not campaign or (campaign.user_id != current_user.id and not current_user.is_admin):
         raise HTTPException(status_code=404, detail="Campaign not found")
 
+    offset = (page - 1) * page_size
     result = await db.execute(
         select(EmailLog)
         .where(EmailLog.campaign_id == campaign_id)
         .order_by(EmailLog.created_at)
+        .offset(offset)
+        .limit(page_size)
     )
     logs = result.scalars().all()
     return [EmailLogResponse(
@@ -209,50 +214,53 @@ async def stream_campaign_progress(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # First, verify ownership once before starting the stream
+    # Verify ownership once before starting the stream
     result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
     campaign_check = result.scalar_one_or_none()
     if not campaign_check or (campaign_check.user_id != current_user.id and not current_user.is_admin):
         raise HTTPException(status_code=404, detail="Campaign not found")
 
     async def event_generator():
-        while True:
-            result = await db.execute(
-                select(Campaign).where(Campaign.id == campaign_id)
-            )
-            campaign = result.scalar_one_or_none()
-            if not campaign:
-                break
+        # Use a dedicated session for the long-lived SSE stream
+        # (the request-scoped session from get_db is closed after the handler returns)
+        async with AsyncSessionLocal() as stream_db:
+            while True:
+                result = await stream_db.execute(
+                    select(Campaign).where(Campaign.id == campaign_id)
+                )
+                campaign = result.scalar_one_or_none()
+                if not campaign:
+                    break
 
-            logs_result = await db.execute(
-                select(EmailLog)
-                .where(EmailLog.campaign_id == campaign_id)
-                .order_by(EmailLog.created_at.desc())
-                .limit(50)
-            )
-            logs = logs_result.scalars().all()
+                logs_result = await stream_db.execute(
+                    select(EmailLog)
+                    .where(EmailLog.campaign_id == campaign_id)
+                    .order_by(EmailLog.created_at.desc())
+                    .limit(50)
+                )
+                logs = logs_result.scalars().all()
 
-            data = {
-                "status": campaign.status,
-                "total": campaign.total_emails,
-                "sent": campaign.sent_count,
-                "failed": campaign.failed_count,
-                "opened": campaign.opened_count,
-                "logs": [
-                    {
-                        "id": l.id,
-                        "email": l.recipient_email,
-                        "status": l.status.value if hasattr(l.status, 'value') else l.status,
-                        "sent_at": str(l.sent_at) if l.sent_at else None,
-                    }
-                    for l in logs
-                ]
-            }
-            yield f"data: {json.dumps(data)}\n\n"
+                data = {
+                    "status": campaign.status,
+                    "total": campaign.total_emails,
+                    "sent": campaign.sent_count,
+                    "failed": campaign.failed_count,
+                    "opened": campaign.opened_count,
+                    "logs": [
+                        {
+                            "id": l.id,
+                            "email": l.recipient_email,
+                            "status": l.status.value if hasattr(l.status, 'value') else l.status,
+                            "sent_at": str(l.sent_at) if l.sent_at else None,
+                        }
+                        for l in logs
+                    ]
+                }
+                yield f"data: {json.dumps(data)}\n\n"
 
-            if campaign.status in ("completed", "failed"):
-                break
-            await asyncio.sleep(2)
+                if campaign.status in ("completed", "failed"):
+                    break
+                await asyncio.sleep(2)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

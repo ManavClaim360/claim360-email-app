@@ -9,15 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.40.0",
+    "axios": "^1.7.2",
+    "dompurify": "^3.3.3",
+    "lucide-react": "^0.383.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.1",
-    "axios": "^1.7.2",
-    "react-quill": "^2.0.0",
-    "react-hot-toast": "^2.4.1",
-    "@tanstack/react-query": "^5.40.0",
     "react-dropzone": "^14.2.3",
-    "lucide-react": "^0.383.0"
+    "react-hot-toast": "^2.4.1",
+    "react-quill": "^2.0.0",
+    "react-router-dom": "^6.23.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

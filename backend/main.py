@@ -50,10 +50,9 @@ if settings.FRONTEND_URL:
     if settings.FRONTEND_URL.startswith("https://"):
         allow_origins.append(settings.FRONTEND_URL.replace("https://", "http://").rstrip("/"))
 else:
-    # Transition fallback for initial Render setup
     if os.environ.get("RENDER"):
-        logger.warning("⚠️ FRONTEND_URL not set on Render. Allowing all onrender.com subdomains for transition.")
-        allow_origins = ["*"] # Be permissive for initial setup if env vars are missing
+        logger.warning("⚠️ FRONTEND_URL not set on Render — CORS restricted to localhost. Set FRONTEND_URL!")
+        allow_origins = ["http://localhost:5173", "http://localhost:3000"]
     else:
         allow_origins = ["http://localhost:5173", "http://localhost:3000"]
         logger.warning("⚠️ Using local dev origins for CORS.")
@@ -74,7 +73,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(traceback.format_exc())
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error", "error": str(exc)},
+        content={"detail": "Internal Server Error", "code": "INTERNAL_ERROR"},
     )
 
 @app.on_event("startup")
@@ -133,12 +132,13 @@ async def startup_event():
 
 
     logger.info("=" * 60)
-    logger.info(f"✓ Startup complete - API ready to serve requests")
-    logger.info(f"Allowed Origins: {allow_origins}")
-    if settings.BASE_URL:
-        logger.info(f"Base URL (Backend): {settings.BASE_URL}")
-    if settings.FRONTEND_URL:
-        logger.info(f"Frontend URL: {settings.FRONTEND_URL}")
+    logger.info(f"✓ Startup complete — {settings.APP_NAME} v{settings.APP_VERSION}")
+    logger.info(f"  Allowed Origins : {allow_origins}")
+    logger.info(f"  Base URL        : {settings.BASE_URL or '(not set)'}")
+    logger.info(f"  Frontend URL    : {settings.FRONTEND_URL or '(not set)'}")
+    logger.info(f"  OAuth configured: {bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET)}")
+    logger.info(f"  Send delay (s)  : {settings.SEND_DELAY_SECONDS}")
+    logger.info(f"  Max attachment  : {settings.MAX_ATTACHMENT_SIZE_MB} MB")
     logger.info("=" * 60)
 
 app.include_router(auth_router)

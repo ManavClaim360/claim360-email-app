@@ -49,17 +49,13 @@ def substitute_variables(template: str, variables: Dict[str, str]) -> str:
     
     def replacer(match):
         key = match.group(1).strip()
-        # Fallback to the original placeholder if variable not found
         val = variables.get(key)
         if val is None:
-            return match.group(0)
-        
-        # Ensure value is stringified, handle None or shared data
-        val_str = str(val)
-        
-        # If it looks like HTML, we don't escape (since we are in HTML body)
-        # But for plain text fields, we might need caution.
-        return val_str
+            # Default to empty string for missing variables
+            return ""
+
+        # Ensure value is stringified
+        return str(val)
 
     # Support {{ var }}, {{var}}, and spaces inside
     return re.sub(r'\{\{\s*(\w+)\s*\}\}', replacer, template)

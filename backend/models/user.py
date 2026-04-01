@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Text, Float,
-    ForeignKey, JSON, Enum as SAEnum, BigInteger
+    ForeignKey, JSON, Enum as SAEnum, BigInteger, Index
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -39,7 +39,7 @@ class OAuthToken(Base):
     __tablename__ = "oauth_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     gmail_email = Column(String(255), nullable=True)
     access_token = Column(Text, nullable=False)
     refresh_token = Column(Text, nullable=True)
@@ -119,7 +119,7 @@ class Contact(Base):
     __tablename__ = "contacts"
 
     id = Column(Integer, primary_key=True, index=True)
-    campaign_id = Column(Integer, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False)
+    campaign_id = Column(Integer, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True)
     email = Column(String(255), nullable=False)
     cc_emails = Column(JSON, default=list)
     variables = Column(JSON, default=dict)  # {var_name: value}
@@ -158,8 +158,8 @@ class EmailLog(Base):
     __tablename__ = "email_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)
     recipient_email = Column(String(255), nullable=False)
     cc_emails = Column(JSON, default=list)
@@ -196,7 +196,7 @@ class Signature(Base):
     __tablename__ = "signatures"
 
     id          = Column(Integer, primary_key=True, index=True)
-    user_id     = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id     = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     name        = Column(String(255), nullable=False, default="My Signature")
     is_default  = Column(Boolean, default=True)   # auto-append to every email
     is_shared   = Column(Boolean, default=False)  # admin can share as org template
@@ -229,6 +229,9 @@ class Signature(Base):
 
 class OTP(Base):
     __tablename__ = "otps"
+    __table_args__ = (
+        Index("ix_otps_email_purpose_expires", "email", "purpose", "expires_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), nullable=False, index=True)
