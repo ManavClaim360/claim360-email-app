@@ -145,12 +145,20 @@ async def get_credentials(user_id: int, db: AsyncSession) -> Optional[Credential
     )
 
     if creds.expired and creds.refresh_token:
+        import logging
+        _log = logging.getLogger("gmail")
         try:
             creds.refresh(Request())
+            # Persist the refreshed token back to DB
             token.access_token = creds.token
             token.token_expiry = creds.expiry
             await db.commit()
-        except Exception:
+            _log.info(f"Refreshed OAuth token for user_id={user_id}")
+        except Exception as refresh_err:
+            _log.warning(
+                f"OAuth token refresh failed for user_id={user_id}: {refresh_err}. "
+                "Marking token invalid — user must re-authenticate."
+            )
             token.is_valid = False
             await db.commit()
             return None

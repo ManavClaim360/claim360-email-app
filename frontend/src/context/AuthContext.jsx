@@ -54,6 +54,8 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('mb_token')
     localStorage.removeItem('mb_user')
     setUser(null)
+    setError(null)
+    setLoading(false)
   }
 
   const refreshUser = () => fetchMe()
@@ -65,4 +67,10 @@ export function AuthProvider({ children }) {
   )
 }
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => {
+  const ctx = useContext(AuthContext)
+  if (ctx === null) {
+    throw new Error('useAuth must be used within an <AuthProvider>')
+  }
+  return ctx
+}

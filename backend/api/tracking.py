@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 import base64
 
 from core.database import get_db
@@ -53,20 +53,52 @@ async def admin_stats(admin: User = Depends(get_current_admin), db: AsyncSession
             "total_sent": total_sent, "total_opened": total_opened, "total_failed": total_failed}
 
 
-# ── Admin: list users ─────────────────────────────────────────────────────
+# ── Admin: list users (single query with subqueries — no N+1) ─────────────
 @admin_router.get("/users")
-async def admin_list_users(admin: User = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).order_by(User.created_at.desc()))
-    users = result.scalars().all()
-    out = []
-    for u in users:
-        ccount = (await db.execute(select(func.count(Campaign.id)).where(Campaign.user_id == u.id))).scalar()
-        scount = (await db.execute(select(func.count(EmailLog.id)).where(
-            EmailLog.user_id == u.id, EmailLog.status.in_([EmailStatus.sent, EmailStatus.opened])))).scalar()
-        out.append({"id": u.id, "email": u.email, "full_name": u.full_name,
-                    "is_admin": u.is_admin, "is_active": u.is_active,
-                    "campaigns": ccount, "emails_sent": scount, "created_at": str(u.created_at)})
-    return out
+async def admin_list_users(
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+):
+    campaign_count = (
+        select(func.count(Campaign.id))
+        .where(Campaign.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+        .label("campaigns")
+    )
+    sent_count = (
+        select(func.count(EmailLog.id))
+        .where(
+            EmailLog.user_id == User.id,
+            EmailLog.status.in_([EmailStatus.sent, EmailStatus.opened]),
+        )
+        .correlate(User)
+        .scalar_subquery()
+        .label("emails_sent")
+    )
+
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        select(User, campaign_count, sent_count)
+        .order_by(User.created_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "full_name": u.full_name,
+            "is_admin": u.is_admin,
+            "is_active": u.is_active,
+            "campaigns": ccount or 0,
+            "emails_sent": scount or 0,
+            "created_at": str(u.created_at),
+        }
+        for u, ccount, scount in result.all()
+    ]
 
 
 # ── Admin: create user ────────────────────────────────────────────────────
@@ -167,13 +199,21 @@ async def update_admin_settings(
     return {"registrations_open": row.registrations_open, "message": "Settings updated"}
 
 
-# ── Admin: all campaigns ──────────────────────────────────────────────────
+# ── Admin: all campaigns (paginated) ──────────────────────────────────────
 @admin_router.get("/campaigns")
-async def admin_all_campaigns(admin: User = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+async def admin_all_campaigns(
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+):
+    offset = (page - 1) * page_size
     result = await db.execute(
         select(Campaign, User.email, User.full_name)
         .join(User, Campaign.user_id == User.id)
         .order_by(Campaign.created_at.desc())
+        .offset(offset)
+        .limit(page_size)
     )
     return [{"id": c.id, "name": c.name, "status": c.status, "total_emails": c.total_emails,
              "sent_count": c.sent_count, "failed_count": c.failed_count, "opened_count": c.opened_count,

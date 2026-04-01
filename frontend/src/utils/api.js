@@ -1,10 +1,8 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-// Determine API URL: env var (Render) → Vercel (relative) → localhost fallback
+// Determine API URL from environment variable
 const envUrl = import.meta.env.VITE_API_URL
-const isVercel = window.location.hostname.includes('vercel.app')
-const isRender = window.location.hostname.includes('onrender.com')
 
 let parsedEnvUrl = envUrl;
 if (parsedEnvUrl && !parsedEnvUrl.startsWith('http')) {
@@ -38,13 +36,30 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const msg = err?.response?.data?.detail || err.message || 'Request failed'
     const url  = err?.config?.url || ''
-    if (err?.response?.status === 401) {
+
+    // Network error (no response from server at all)
+    if (!err.response) {
+      const isTimeout = err.code === 'ECONNABORTED'
+      const networkMsg = isTimeout
+        ? 'Request timed out — the server may be slow or unreachable.'
+        : 'Network error — please check your internet connection and try again.'
+      if (!url.includes('/api/signatures')) {
+        toast.error(networkMsg)
+      }
+      return Promise.reject(err)
+    }
+
+    const msg = err.response.data?.detail || err.message || 'Request failed'
+
+    if (err.response.status === 401) {
       localStorage.removeItem('mb_token')
       localStorage.removeItem('mb_user')
-      window.location.href = '/login'
-    } else if (err?.response?.status !== 422 && !url.includes('/api/signatures')) {
+      // Prevent redirect loop if already on login page
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
+    } else if (err.response.status !== 422 && !url.includes('/api/signatures')) {
       // suppress toasts for signature endpoints — handled gracefully in the page
       toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
     }

@@ -11,11 +11,23 @@ export function DataProvider({ children }) {
   const [contacts,  setContacts]  = useState([])
   const [varNames,  setVarNames]  = useState([])
 
+  /** Reset all data — call between campaigns or on logout */
+  const resetData = () => {
+    setContacts([])
+    setVarNames([])
+  }
+
   return (
-    <DataContext.Provider value={{ contacts, setContacts, varNames, setVarNames }}>
+    <DataContext.Provider value={{ contacts, setContacts, varNames, setVarNames, resetData }}>
       {children}
     </DataContext.Provider>
   )
 }
 
-export const useData = () => useContext(DataContext)
+export const useData = () => {
+  const ctx = useContext(DataContext)
+  if (ctx === null) {
+    throw new Error('useData must be used within a <DataProvider>')
+  }
+  return ctx
+}
