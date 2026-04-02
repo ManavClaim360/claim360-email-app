@@ -220,6 +220,10 @@ export default function SignaturePage({ adminUserId, adminUserEmail, onBack }) {
   const set = (name, val) => setForm(f => ({ ...f, [name]: val }))
   const setSocial = (key, val) => setForm(f => ({ ...f, social_links: { ...f.social_links, [key]: val } }))
 
+  // Keep latest form + saveMut in refs for the blur handler (avoids stale closure)
+  const formRef = useRef(form)
+  useEffect(() => { formRef.current = form }, [form])
+
   const saveMut = useMutation({
     mutationFn: () => sigApi.save(adminUserId, form),
     onSuccess: () => { toast.success('Signature saved!'); qc.invalidateQueries(['sig', adminUserId]) },
@@ -233,6 +237,21 @@ export default function SignaturePage({ adminUserId, adminUserEmail, onBack }) {
     mutationFn: () => sigApi.delete(adminUserId),
     onSuccess: () => { toast.success('Deleted'); setForm(EMPTY); qc.invalidateQueries(['sig', adminUserId]) },
   })
+
+  const saveMutRef = useRef(null)
+  useEffect(() => { saveMutRef.current = saveMut }, [saveMut])
+
+  // Auto-save when user switches window/tab
+  useEffect(() => {
+    const handleBlur = () => {
+      const f = formRef.current
+      if (!f.full_name && !f.phone && !f.email_addr) return
+      if (saveMutRef.current?.isPending) return
+      saveMutRef.current?.mutate()
+    }
+    window.addEventListener('blur', handleBlur)
+    return () => window.removeEventListener('blur', handleBlur)
+  }, [])
 
   if (isLoading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60 }}><span className="spinner" style={{ width: 28, height: 28 }} /></div>
 
