@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authApi } from '../utils/api'
 import { useAuth } from '../context/AuthContext'
@@ -14,11 +14,24 @@ export default function ConfigPage() {
     queryFn: authApi.me,
   })
 
+  // Listen for popup postMessage after OAuth completes
+  useEffect(() => {
+    const handleMsg = (e) => {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.type === 'gmail_connected') {
+        qc.invalidateQueries(['me'])
+        refreshUser()
+        if (e.data.success) toast.success('Gmail connected successfully!')
+      }
+    }
+    window.addEventListener('message', handleMsg)
+    return () => window.removeEventListener('message', handleMsg)
+  }, [qc, refreshUser])
+
   const connectGmail = async () => {
     try {
       const { url } = await authApi.oauthUrl()
-      window.open(url, '_blank', 'width=600,height=700')
-      toast('Authorize in the opened window, then click Refresh Status.', { icon: '🔗' })
+      window.open(url, 'gmail_oauth', 'width=600,height=700,left=200,top=100')
     } catch { }
   }
 
@@ -87,9 +100,6 @@ export default function ConfigPage() {
               <button className="btn-primary" onClick={connectGmail}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <ExternalLink size={14} /> Connect Gmail
-              </button>
-              <button className="btn-secondary" onClick={() => { qc.invalidateQueries(['me']); refreshUser() }}>
-                Refresh Status
               </button>
             </div>
           </div>

@@ -164,73 +164,60 @@ async def admin_delete_signature(
 
 # ── HTML builder (used by email_service) ──────────────────────────
 def build_signature_html(sig: Signature) -> str:
+    """Build email signature HTML — mirrors frontend buildPreviewHtml exactly."""
     if not sig:
         return ""
     color = sig.brand_color or "#1C305E"
     social = sig.social_links or {}
 
-    html = f'<div style="margin-top:24px;padding-top:14px;border-top:2px solid {color};font-family:Arial,sans-serif;max-width:540px">'
+    html = f'<div style="margin-top:24px;padding-top:14px;border-top:2px solid {color};font-family:Arial,sans-serif;max-width:560px">'
 
     def _details_html():
+        """All contact details: name, title, company, phone, email, website, addresses, footer."""
         d = ''
-        if sig.full_name: d += f'<div style="font-size:16px;font-weight:700;color:{color};margin:0 0 1px">{sig.full_name}</div>'
-        if sig.title:     d += f'<div style="font-size:12px;color:#555555;margin:0 0 1px">{sig.title}</div>'
-        if sig.company:   d += f'<div style="font-size:12px;font-weight:600;color:#333333;margin:0 0 6px">{sig.company}</div>'
+        if sig.full_name:  d += f'<div style="font-size:16px;font-weight:700;color:{color};margin:0 0 1px">{sig.full_name}</div>'
+        if sig.title:      d += f'<div style="font-size:12px;color:#555555;margin:0 0 1px">{sig.title}</div>'
+        if sig.company:    d += f'<div style="font-size:12px;font-weight:600;color:#333333;margin:0 0 6px">{sig.company}</div>'
+        if sig.phone:      d += f'<div style="font-size:12px;color:#444444;margin:2px 0">&#128222; <a href="tel:{sig.phone}" style="color:#444444;text-decoration:none">{sig.phone}</a></div>'
+        if sig.email_addr: d += f'<div style="font-size:12px;color:#444444;margin:2px 0">&#128231; <a href="mailto:{sig.email_addr}" style="color:{color};text-decoration:none">{sig.email_addr}</a></div>'
+        if sig.website:    d += f'<div style="font-size:12px;color:#444444;margin:2px 0">&#127759; <a href="https://{sig.website}" style="color:{color};text-decoration:none">{sig.website}</a></div>'
+        for label, addr in [("Mumbai", sig.address_mumbai), ("Delhi", sig.address_delhi), ("London", sig.address_london)]:
+            if addr:
+                d += f'<div style="font-size:11px;color:#666666;margin:2px 0">&#128205; <strong>{label}:</strong> {addr}</div>'
+        footer = []
+        if sig.cin:            footer.append(f"CIN: {sig.cin}")
+        if sig.copyright_text: footer.append(sig.copyright_text)
+        if footer:
+            d += f'<div style="font-size:10px;color:#999999;margin:5px 0 0">{" &nbsp;&bull;&nbsp; ".join(footer)}</div>'
         return d
 
     if sig.logo_url:
-        # Logo left, all details in right column — no padding gap
-        html += '<table style="border:none!important;border-collapse:collapse;margin:0 0 4px;width:auto"><tr>'
+        # Logo left, all details in right column — same layout as frontend preview
+        html += '<table style="border:none!important;border-collapse:collapse;margin:0 0 6px 0;width:auto"><tr>'
         html += f'<td style="border:none!important;vertical-align:top;padding:0 14px 0 0;background:transparent!important"><img src="{sig.logo_url}" alt="{sig.company or ""}" style="height:60px;width:auto;border-radius:6px;display:block" /></td>'
         html += f'<td style="border:none!important;vertical-align:top;padding:0;background:transparent!important">{_details_html()}</td>'
         html += '</tr></table>'
     else:
         html += _details_html()
 
-    # Contact lines
-    if sig.phone:
-        html += f'<div style="font-size:12px;color:#444444;margin:3px 0">&#128222; <a href="tel:{sig.phone}" style="color:#444444;text-decoration:none">{sig.phone}</a></div>'
-    if sig.email_addr:
-        html += f'<div style="font-size:12px;color:#444444;margin:3px 0">&#128231; <a href="mailto:{sig.email_addr}" style="color:{color};text-decoration:none">{sig.email_addr}</a></div>'
-    if sig.website:
-        html += f'<div style="font-size:12px;color:#444444;margin:3px 0">&#127759; <a href="https://{sig.website}" style="color:{color};text-decoration:none">{sig.website}</a></div>'
-
-    # Addresses
-    addrs = [
-        ("Mumbai", sig.address_mumbai),
-        ("Delhi",  sig.address_delhi),
-        ("London", sig.address_london),
-    ]
-    for label, addr in addrs:
-        if addr:
-            html += f'<div style="font-size:11px;color:#666666;margin:2px 0">&#128205; <strong>{label}:</strong> {addr}</div>'
-
-    # CIN + copyright
-    footer = []
-    if sig.cin:            footer.append(f"CIN: {sig.cin}")
-    if sig.copyright_text: footer.append(sig.copyright_text)
-    if footer:
-        html += f'<div style="font-size:10px;color:#999999;margin:6px 0 8px 0">{" &nbsp;&bull;&nbsp; ".join(footer)}</div>'
-
     # Social buttons
     btns = []
-    # WhatsApp
     wa_num = (social.get("whatsapp_number") or "").replace(" ", "").replace("+", "").replace("-", "")
     if wa_num:
         btns.append(f'<a href="https://wa.me/{wa_num}" title="WhatsApp" style="display:inline-block;margin-right:8px;text-decoration:none"><img src="https://img.icons8.com/ios-filled/50/666666/whatsapp--v1.png" width="16" height="16" alt="WhatsApp" style="display:block;border:none;border-radius:50%;background-color:#f5f5f5;padding:8px;" /></a>')
-        
+
     SOCIAL_CFG = [
-        ("linkedin", "LinkedIn", "https://img.icons8.com/ios-filled/50/666666/linkedin.png"),
-        ("location", "Location", "https://img.icons8.com/ios-filled/50/666666/marker.png"),
-        ("twitter", "X", "https://img.icons8.com/ios-filled/50/666666/twitterx--v1.png"),
+        ("linkedin",  "LinkedIn",  "https://img.icons8.com/ios-filled/50/666666/linkedin.png"),
+        ("location",  "Location",  "https://img.icons8.com/ios-filled/50/666666/marker.png"),
+        ("twitter",   "X",         "https://img.icons8.com/ios-filled/50/666666/twitterx--v1.png"),
         ("instagram", "Instagram", "https://img.icons8.com/ios-filled/50/666666/instagram-new.png"),
-        ("facebook", "Facebook", "https://img.icons8.com/ios-filled/50/666666/facebook-new.png"),
+        ("facebook",  "Facebook",  "https://img.icons8.com/ios-filled/50/666666/facebook-new.png"),
     ]
     for key, label, src in SOCIAL_CFG:
         url = social.get(key, "")
         if url:
             btns.append(f'<a href="{url}" title="{label}" style="display:inline-block;margin-right:8px;text-decoration:none"><img src="{src}" width="16" height="16" alt="{label}" style="display:block;border:none;border-radius:50%;background-color:#f5f5f5;padding:8px;" /></a>')
-            
+
     if btns:
         html += f'<div style="margin-top:10px">{"".join(btns)}</div>'
 

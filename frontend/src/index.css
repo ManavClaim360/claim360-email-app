@@ -24,22 +24,7 @@
   --font:      'Inter','Segoe UI',sans-serif;
   --mono:      'JetBrains Mono','Consolas',monospace;
   --bg-gradient:
-    linear-gradient(135deg, rgba(28,48,94,0.6) 0%, rgba(93,0,95,0.6) 100%),
-    radial-gradient(12px 12px at 20% 30%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(6px 6px at 40% 70%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(14px 14px at 65% 20%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(7px 7px at 80% 50%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(12px 12px at 10% 80%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(6px 6px at 55% 60%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(13px 13px at 75% 75%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(6px 6px at 90% 15%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(14px 14px at 35% 40%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(8px 8px at 15% 50%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(10px 10px at 50% 25%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(7px 7px at 85% 65%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(11px 11px at 30% 85%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(6px 6px at 70% 45%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(9px 9px at 25% 10%, rgba(255,255,255,0.85), transparent);
+    linear-gradient(135deg, rgba(28,48,94,0.6) 0%, rgba(93,0,95,0.6) 100%);
 }
 
 /* ── Light theme ──────────────────────────────────────────────── */
@@ -64,6 +49,46 @@
   --btn-text:  #ffffff;
   --bg-gradient: none;
 }
+
+/* ── 4-pointed sparkle stars — dark theme only ────────────────── */
+:root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.45'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.65'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.65'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.65'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.65'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 L10.5,9.5 L20,10 L10.5,10.5 L10,20 L9.5,10.5 L0,10 L9.5,9.5 Z' fill='white' opacity='.65'/%3E%3C/svg%3E");
+  background-position:
+    20% 30%, 40% 70%, 65% 20%,
+    80% 50%, 10% 80%, 55% 60%,
+    75% 75%, 90% 15%, 35% 40%,
+    15% 50%, 50% 25%, 85% 65%,
+    30% 85%, 70% 45%, 25% 10%;
+  background-size:
+    14px 14px,  8px 8px,  16px 16px,
+    10px 10px, 14px 14px,  7px  7px,
+    15px 15px,  8px 8px,  16px 16px,
+    10px 10px, 12px 12px,  9px  9px,
+    13px 13px,  7px 7px,  11px 11px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+[data-theme="light"]::before { content: none; }
 
 html, body, #root {
   height: 100%;
