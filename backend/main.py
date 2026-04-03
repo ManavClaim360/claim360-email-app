@@ -162,3 +162,8 @@ async def health(db: AsyncSession = Depends(get_db)):
 @app.get("/")
 async def root():
     return {"message": "Claim360 API is running"}
+
+@app.get("/api/ping")
+async def ping():
+    """Lightweight keep-alive — no DB hit. Ping this every 10 min to prevent Render cold starts."""
+    return {"ok": True}

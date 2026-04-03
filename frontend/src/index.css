@@ -553,4 +553,33 @@ tbody td { padding: 9px 12px; color: var(--text); }
     padding: 20px 16px !important;
   }
   h1 { font-size: 20px !important; }
+
+  /* Tracking stats — collapse from 5 cols to 2x2+1 */
+  .tracking-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Page headers with action buttons — stack vertically */
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  /* Inputs and buttons full-width on small screens */
+  .mobile-full { width: 100% !important; }
+
+  /* Prevent fixed-width inline styles from overflowing */
+  [style*="width: 460px"], [style*="width:460px"],
+  [style*="width: 600px"], [style*="width:600px"],
+  [style*="width: 680px"], [style*="width:680px"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Signature preview panel — no sticky on mobile */
+  [style*="position: sticky"] {
+    position: relative !important;
+    top: auto !important;
+  }
 }
