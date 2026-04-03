@@ -12,6 +12,7 @@ import TrackingPage from './pages/TrackingPage'
 import AdminPage from './pages/AdminPage'
 import SignaturePage from './pages/SignaturePage'
 import OAuthCallback from './pages/OAuthCallback'
+import PrivacyPage from './pages/PrivacyPage'
 
 function RequireAuth({ children }) {
   const { user, loading, error } = useAuth()
@@ -40,6 +41,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/config" replace /> : <LoginPage />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Navigate to="/config" replace />} />
         <Route path="config"    element={<ConfigPage />} />
