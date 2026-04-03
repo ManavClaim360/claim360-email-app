@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 
 export default function ConfigPage() {
   const qc = useQueryClient()
-  const { refreshUser } = useAuth()
+  const { refreshUser, user } = useAuth()
 
   const { data: me, isLoading } = useQuery({
     queryKey: ['me'],
@@ -106,46 +106,48 @@ export default function ConfigPage() {
         )}
       </div>
 
-      {/* OAuth Setup Instructions */}
-      <details className="card" style={{ maxWidth: 600, marginTop: 24, cursor: 'pointer' }}>
-        <summary style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', outline: 'none', userSelect: 'none' }}>
-          Click here to view Google Cloud Console setup instructions
-        </summary>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
-          {[
-            { n: 1, title: 'Go to Google Cloud Console', desc: 'Visit console.cloud.google.com and select your project (or create one).' },
-            { n: 2, title: 'Enable Gmail API', desc: 'Navigate to: APIs & Services → Library → search "Gmail API" → Enable.' },
-            { n: 3, title: 'Create OAuth Credentials', desc: 'APIs & Services → Credentials → Create → OAuth 2.0 Client ID → Web Application.' },
-            { n: 4, title: 'Set Authorized JavaScript Origins', body: ['http://localhost:3000', 'https://your-frontend.vercel.app'] },
-            { n: 5, title: 'Set Authorized Redirect URIs', body: ['http://localhost:8000/api/auth/oauth/callback', 'https://your-backend.vercel.app/api/auth/oauth/callback'] },
-            { n: 6, title: 'Copy credentials to backend .env', desc: 'Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your backend/.env file.' },
-          ].map(step => (
-            <div key={step.n} style={{ display: 'flex', gap: 14 }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                background: 'rgba(70, 85, 88, 0.12)', border: '1px solid rgba(0,212,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 700, color: 'var(--accent-lit)',
-              }}>{step.n}</div>
-              <div style={{ color: 'var(--text)' }}>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{step.title}</div>
-                {step.desc && <div style={{ fontSize: 12, color: 'var(--subtext)', marginTop: 2 }}>{step.desc}</div>}
-                {step.body && (
-                  <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {step.body.map(b => (
-                      <code key={b} style={{
-                        fontSize: 12, padding: '3px 8px', borderRadius: 4,
-                        background: 'var(--bg)', border: '1px solid var(--border)',
-                        color: 'var(--accent-lit)', fontFamily: 'var(--mono)',
-                      }}>{b}</code>
-                    ))}
-                  </div>
-                )}
+      {/* OAuth Setup Instructions — admin only */}
+      {user?.is_admin && (
+        <details className="card" style={{ maxWidth: 600, marginTop: 24, cursor: 'pointer' }}>
+          <summary style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', outline: 'none', userSelect: 'none' }}>
+            Google Cloud Console setup instructions (Admin only)
+          </summary>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+            {[
+              { n: 1, title: 'Go to Google Cloud Console', desc: 'Visit console.cloud.google.com and select your project (or create one).' },
+              { n: 2, title: 'Enable Gmail API', desc: 'Navigate to: APIs & Services → Library → search "Gmail API" → Enable.' },
+              { n: 3, title: 'Create OAuth Credentials', desc: 'APIs & Services → Credentials → Create → OAuth 2.0 Client ID → Web Application.' },
+              { n: 4, title: 'Set Authorized JavaScript Origins', body: ['http://localhost:3000', 'https://your-frontend.vercel.app'] },
+              { n: 5, title: 'Set Authorized Redirect URIs', body: ['http://localhost:8000/api/auth/oauth/callback', 'https://your-backend.vercel.app/api/auth/oauth/callback'] },
+              { n: 6, title: 'Copy credentials to backend .env', desc: 'Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your backend/.env file.' },
+            ].map(step => (
+              <div key={step.n} style={{ display: 'flex', gap: 14 }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                  background: 'rgba(70,85,88,0.12)', border: '1px solid rgba(0,212,255,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700, color: 'var(--accent-lit)',
+                }}>{step.n}</div>
+                <div style={{ color: 'var(--text)' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{step.title}</div>
+                  {step.desc && <div style={{ fontSize: 12, color: 'var(--subtext)', marginTop: 2 }}>{step.desc}</div>}
+                  {step.body && (
+                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {step.body.map(b => (
+                        <code key={b} style={{
+                          fontSize: 12, padding: '3px 8px', borderRadius: 4,
+                          background: 'var(--bg)', border: '1px solid var(--border)',
+                          color: 'var(--accent-lit)', fontFamily: 'var(--mono)',
+                        }}>{b}</code>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </details>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   )
 }

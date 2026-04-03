@@ -553,4 +553,50 @@ tbody td { padding: 9px 12px; color: var(--text); }
     padding: 20px 16px !important;
   }
   h1 { font-size: 20px !important; }
+
+  /* Tracking / admin stats — collapse from 5 cols to 3 */
+  .tracking-stats-grid,
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Admin tabs — scroll horizontally, never wrap or overflow page */
+  .admin-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding-bottom: 2px;
+  }
+  .admin-tabs button {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Nav active link — ensure left-border accent is always visible on mobile drawer */
+  .app-sidebar .nav-link-active {
+    background: var(--nav-sel) !important;
+    border-left-color: rgba(255,255,255,0.8) !important;
+    color: #fff !important;
+  }
+
+  /* Page headers with action buttons — stack vertically */
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  /* Prevent fixed-width inline styles from overflowing */
+  [style*="max-width: 600px"], [style*="max-width:600px"],
+  [style*="max-width: 500px"], [style*="max-width:500px"] {
+    max-width: 100% !important;
+  }
+
+  /* Signature preview panel — no sticky on mobile */
+  [style*="position: sticky"] {
+    position: relative !important;
+    top: auto !important;
+  }
 }

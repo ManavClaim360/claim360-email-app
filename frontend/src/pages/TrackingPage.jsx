@@ -20,14 +20,18 @@ export default function TrackingPage() {
   const { data: campaigns = [], refetch } = useQuery({
     queryKey: ['campaigns'],
     queryFn: campaignsApi.list,
-    refetchInterval: 10000,
+    // Only poll while there's a running campaign; stop once all are done
+    refetchInterval: (data) => data?.some(c => c.status === 'running') ? 8000 : false,
   })
+
+  const selected = campaigns.find(c => c.id === selectedId)
 
   const { data: logs = [], isLoading: logsLoading } = useQuery({
     queryKey: ['campaign-logs', selectedId],
     queryFn: () => campaignsApi.logs(selectedId),
     enabled: !!selectedId,
-    refetchInterval: selectedId ? 5000 : false,
+    // Only poll logs while the selected campaign is actively running
+    refetchInterval: selected?.status === 'running' ? 4000 : false,
   })
 
   const deleteMut = useMutation({
@@ -38,8 +42,6 @@ export default function TrackingPage() {
       qc.invalidateQueries(['campaigns'])
     },
   })
-
-  const selected = campaigns.find(c => c.id === selectedId)
 
   const STATUS_BADGE = (status) => {
     const map = {
@@ -123,7 +125,7 @@ export default function TrackingPage() {
             </div>
 
             {/* Stats */}
-            <div className="res-grid-half" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            <div className="tracking-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
               {[
                 { label: 'Total',   value: selected.total_emails,  color: 'var(--text)' },
                 { label: 'Sent',    value: selected.sent_count,    color: 'var(--success)' },

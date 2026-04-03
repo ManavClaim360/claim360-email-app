@@ -78,15 +78,17 @@ export default function Layout() {
         <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, padding: '8px 10px 4px', textTransform: 'uppercase' }}>Menu</div>
           {NAV.map(({ to, icon: Icon, label, tip }) => (
-            <NavLink key={to} to={to} title={tip} style={({ isActive }) => ({
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 6, marginBottom: 1,
-              fontSize: 13, fontWeight: 500, textDecoration: 'none',
-              color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
-              background: isActive ? 'var(--nav-sel)' : 'transparent',
-              borderLeft: `3px solid ${isActive ? 'rgba(255,255,255,0.8)' : 'transparent'}`,
-              transition: 'all 0.15s',
-            })} onClick={() => setMenuOpen(false)}>
+            <NavLink key={to} to={to} title={tip}
+              className={({ isActive }) => isActive ? 'nav-link-active' : ''}
+              style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', borderRadius: 6, marginBottom: 1,
+                fontSize: 13, fontWeight: isActive ? 600 : 500, textDecoration: 'none',
+                color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
+                background: isActive ? 'rgba(255,255,255,0.14)' : 'transparent',
+                borderLeft: `3px solid ${isActive ? '#a8c8f0' : 'transparent'}`,
+                transition: 'all 0.15s',
+              })} onClick={() => setMenuOpen(false)}>
               <Icon size={15} />
               {label}
             </NavLink>

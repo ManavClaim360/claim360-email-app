@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, AsyncAdaptedQueuePool
 from core.config import get_settings
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -12,24 +12,33 @@ if "sslmode=" in db_url or "channel_binding=" in db_url:
     try:
         parsed = urlparse(db_url)
         params = parse_qs(parsed.query, keep_blank_values=True)
-        
+
         # Remove sslmode and channel_binding - we'll handle them in connect_args
         params.pop('sslmode', None)
         params.pop('channel_binding', None)
-        
+
         # Reconstruct query string
         new_query = '&'.join(f"{k}={v[0]}" for k, v in params.items()) if params else ""
         new_parsed = parsed._replace(query=new_query)
         db_url = urlunparse(new_parsed)
     except Exception as e:
         print(f"Warning: Failed to sanitize DB URL: {e}")
-        # Continue with original URL if parsing fails
 
+# Neon (serverless PG) requires NullPool — persistent connections time out.
+# For any other DB (Render PG, Supabase, etc.) use a small pool to reuse connections.
+_is_neon = "neon.tech" in db_url
 engine = create_async_engine(
     db_url,
     echo=False,
-    poolclass=NullPool,
-    connect_args={"ssl": "require"} if "neon.tech" in db_url else {}
+    poolclass=NullPool if _is_neon else AsyncAdaptedQueuePool,
+    **({} if _is_neon else {
+        "pool_size": 3,
+        "max_overflow": 2,
+        "pool_timeout": 10,
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }),
+    connect_args={"ssl": "require"} if _is_neon else {}
 )
 
 AsyncSessionLocal = async_sessionmaker(

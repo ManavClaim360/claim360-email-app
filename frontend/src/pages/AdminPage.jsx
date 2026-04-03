@@ -154,7 +154,7 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
+      <div className="admin-tabs" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '8px 16px', borderRadius: '6px 6px 0 0', border: '1px solid transparent',
@@ -172,7 +172,7 @@ export default function AdminPage() {
       {tab === 'overview' && (
         <div>
           {stats && (
-            <div className="res-grid-half" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 24 }}>
+            <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 24 }}>
               {[
                 { k: 'total_users',     l: 'Total Users',   c: '#b97cf9', i: '👥' },
                 { k: 'total_campaigns', l: 'Campaigns',     c: 'var(--accent-lit)', i: '📋' },
