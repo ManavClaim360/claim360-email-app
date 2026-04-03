@@ -75,6 +75,8 @@ def _send_via_gmail_sync(creds, raw_message: str) -> str:
 
 
 async def send_campaign(campaign_id: int, db: AsyncSession, progress_callback=None, base_url: str = None):
+    from models.user import User
+    from email.utils import formataddr
     # ── Load campaign ─────────────────────────────────────────────
     result = await db.execute(
         select(Campaign)
@@ -95,7 +97,7 @@ async def send_campaign(campaign_id: int, db: AsyncSession, progress_callback=No
         await db.commit()
         return {"error": "No valid Gmail connection. Please reconnect OAuth."}
 
-    # ── Sender email ──────────────────────────────────────────────
+    # ── Sender email + display name ───────────────────────────────
     tok_result = await db.execute(
         select(OAuthToken).where(
             OAuthToken.user_id == campaign.user_id,
@@ -103,7 +105,11 @@ async def send_campaign(campaign_id: int, db: AsyncSession, progress_callback=No
         )
     )
     oauth_token = tok_result.scalar_one_or_none()
-    sender_email = oauth_token.gmail_email if oauth_token else ""
+    raw_email = oauth_token.gmail_email if oauth_token else ""
+    user_result = await db.execute(select(User).where(User.id == campaign.user_id))
+    sender_user = user_result.scalar_one_or_none()
+    display_name = (sender_user.full_name if sender_user and sender_user.full_name else "").strip()
+    sender_email = formataddr((display_name, raw_email)) if display_name else raw_email
 
     # ── Template data ─────────────────────────────────────────────
     template = campaign.template
@@ -283,14 +289,20 @@ async def send_test_email(template_id: int, user_id: int, db: AsyncSession, to_e
     if not creds:
         raise ValueError("No valid Gmail connection. Please connect Gmail first.")
 
-    # ── Sender email ──────────────────────────────────────────────
+    # ── Sender email + display name ───────────────────────────────
+    from models.user import User as UserModel
+    from email.utils import formataddr
     tok_result = await db.execute(
         select(OAuthToken).where(OAuthToken.user_id == user_id, OAuthToken.is_valid == True)
     )
     oauth_token = tok_result.scalar_one_or_none()
-    sender_email = oauth_token.gmail_email if oauth_token else ""
-    
-    recipient = to_email or (oauth_token.gmail_email if oauth_token else None)
+    raw_email = oauth_token.gmail_email if oauth_token else ""
+    user_result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    sender_user = user_result.scalar_one_or_none()
+    display_name = (sender_user.full_name if sender_user and sender_user.full_name else "").strip()
+    sender_email = formataddr((display_name, raw_email)) if display_name else raw_email
+
+    recipient = to_email or raw_email
     if not recipient:
         raise ValueError("No recipient email found for test send.")
 
