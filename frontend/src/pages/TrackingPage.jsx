@@ -20,8 +20,11 @@ export default function TrackingPage() {
   const { data: campaigns = [], refetch } = useQuery({
     queryKey: ['campaigns'],
     queryFn: campaignsApi.list,
-    // Only poll while there's a running campaign; stop once all are done
-    refetchInterval: (data) => data?.some(c => c.status === 'running') ? 8000 : false,
+    // Only poll while there's a running campaign
+    refetchInterval: (dataOrQuery) => {
+      const arr = Array.isArray(dataOrQuery) ? dataOrQuery : dataOrQuery?.state?.data
+      return Array.isArray(arr) && arr.some(c => c.status === 'running') ? 8000 : false
+    },
   })
 
   const selected = campaigns.find(c => c.id === selectedId)
