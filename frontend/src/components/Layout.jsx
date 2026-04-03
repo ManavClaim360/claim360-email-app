@@ -148,7 +148,7 @@ export default function Layout() {
       </aside>
 
         {/* Main content */}
-        <main style={{ flex: 1, overflow: 'auto', background: 'transparent' }}>
+        <main style={{ flex: 1, overflow: 'auto', overflowX: 'hidden', background: 'transparent', minWidth: 0 }}>
           <div className="main-content-pad" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 32px' }}>
             <Outlet />
           </div>

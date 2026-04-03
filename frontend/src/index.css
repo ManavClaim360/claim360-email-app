@@ -472,6 +472,26 @@ tbody td { padding: 9px 12px; color: var(--text); }
 
 /* ── Responsive Utilities (Mobile/Tablet) ────────────────────── */
 @media (max-width: 850px) {
+  /* Prevent all horizontal overflow */
+  html, body, #root {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Tables scroll within their container, never push the page wider */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  /* Cards and content never exceed viewport */
+  .card, .stat-card {
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+
   .res-grid {
     grid-template-columns: 1fr !important;
   }

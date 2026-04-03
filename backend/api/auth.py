@@ -154,13 +154,6 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Account deactivated. Contact your admin.")
 
-        # Force Gmail re-connect on every login (security)
-        tok_result = await db.execute(select(OAuthToken).where(OAuthToken.user_id == user.id))
-        existing_token = tok_result.scalar_one_or_none()
-        if existing_token:
-            existing_token.is_valid = False
-            await db.commit()
-
         if user.is_admin:
             logger.info(f"Admin login: {email_lower}")
         else:
