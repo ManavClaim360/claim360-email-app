@@ -128,6 +128,7 @@ export const campaignsApi = {
   start: (id) => api.post(`/api/campaigns/${id}/send`).then(r => r.data),
   logs: (id) => api.get(`/api/campaigns/${id}/logs`).then(r => r.data),
   delete: (id) => api.delete(`/api/campaigns/${id}`).then(r => r.data),
+  allOpens: () => api.get('/api/campaigns/opens/all').then(r => r.data),
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

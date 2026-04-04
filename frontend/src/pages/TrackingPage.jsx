@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { campaignsApi } from '../utils/api'
-import { BarChart2, RefreshCw, CheckCircle, XCircle, Eye, Clock, Mail, Trash2 } from 'lucide-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw, CheckCircle, XCircle, Eye, Clock, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const STATUS_COLORS = {
@@ -37,12 +36,19 @@ export default function TrackingPage() {
     refetchInterval: selected?.status === 'running' ? 4000 : false,
   })
 
+  const { data: allOpens = [], isLoading: opensLoading, refetch: refetchOpens } = useQuery({
+    queryKey: ['all-opens'],
+    queryFn: campaignsApi.allOpens,
+    staleTime: 60000,
+  })
+
   const deleteMut = useMutation({
     mutationFn: campaignsApi.delete,
     onSuccess: () => {
       toast.success('Campaign deleted')
       setSelectedId(null)
       qc.invalidateQueries(['campaigns'])
+      qc.invalidateQueries(['all-opens'])
     },
   })
 
@@ -73,6 +79,62 @@ export default function TrackingPage() {
         <button className="btn-secondary" onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
           <RefreshCw size={13} /> Refresh
         </button>
+      </div>
+
+      {/* ── All Opens — persistent, always visible ── */}
+      <div className="card" style={{ marginBottom: 24, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Eye size={16} color="var(--accent-lit)" />
+            <span style={{ fontWeight: 700, fontSize: 14 }}>Who Opened</span>
+            <span style={{ fontSize: 11, background: 'rgba(168,200,240,0.15)', color: 'var(--accent-lit)', border: '1px solid rgba(168,200,240,0.3)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
+              {allOpens.length} total opens
+            </span>
+          </div>
+          <button className="btn-secondary" onClick={() => refetchOpens()} style={{ fontSize: 11, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <RefreshCw size={11} /> Refresh
+          </button>
+        </div>
+
+        {opensLoading ? (
+          <div style={{ padding: 30, textAlign: 'center' }}><span className="spinner" /></div>
+        ) : allOpens.length === 0 ? (
+          <div style={{ padding: 28, textAlign: 'center', color: 'var(--subtext)', fontSize: 13 }}>
+            No opens tracked yet — opens appear here once recipients view your emails
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ minWidth: 480 }}>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Recipient</th>
+                  <th>Campaign</th>
+                  <th>Opened At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allOpens.map((o, i) => (
+                  <tr key={o.id}>
+                    <td style={{ color: 'var(--subtext)', fontSize: 11, width: 36 }}>{i + 1}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: 'rgba(168,200,240,0.12)', border: '1px solid rgba(168,200,240,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--accent-lit)' }}>
+                          {o.recipient_email?.[0]?.toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: 12, fontFamily: 'var(--mono)' }}>{o.recipient_email}</span>
+                      </div>
+                    </td>
+                    <td style={{ fontSize: 12, color: 'var(--subtext)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.campaign_name}</td>
+                    <td style={{ fontSize: 12, color: 'var(--accent-lit)', whiteSpace: 'nowrap' }}>
+                      {o.opened_at ? new Date(o.opened_at).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="res-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20, alignItems: 'start' }}>

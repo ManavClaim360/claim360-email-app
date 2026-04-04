@@ -164,7 +164,36 @@ async def get_campaign_logs(
     ) for l in logs]
 
 
-@router.post("/{campaign_id}/send")
+@router.get("/opens/all")
+async def get_all_opens(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return all opened email logs across all campaigns for this user, newest first."""
+    result = await db.execute(
+        select(EmailLog, Campaign.name)
+        .join(Campaign, EmailLog.campaign_id == Campaign.id)
+        .where(
+            Campaign.user_id == current_user.id,
+            EmailLog.opened_at.isnot(None),
+        )
+        .order_by(EmailLog.opened_at.desc())
+        .limit(500)
+    )
+    rows = result.all()
+    return [
+        {
+            "id": log.id,
+            "recipient_email": log.recipient_email,
+            "campaign_name": name,
+            "opened_at": str(log.opened_at),
+            "subject": log.subject,
+        }
+        for log, name in rows
+    ]
+
+
+
 async def start_campaign(
     campaign_id: int,
     request: Request,
