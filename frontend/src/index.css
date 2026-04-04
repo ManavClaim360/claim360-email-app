@@ -6,15 +6,15 @@
   --surface:   rgba(255,255,255,0.06);
   --card:      rgba(255,255,255,0.08);
   --border:    rgba(255,255,255,0.15);
-  --accent:    #1C305E;
-  --accent-h:  #243d78;
-  --accent-lit:#a8c8f0;
+  --accent:    #3b6cf5;
+  --accent-h:  #4a7dff;
+  --accent-lit:#8bb8ff;
   --accent2:   #b97cf9;
-  --success:   #3fb950;
-  --warning:   #d29922;
-  --error:     #f85149;
+  --success:   #4ade80;
+  --warning:   #fbbf24;
+  --error:     #f87171;
   --text:      #ffffff;
-  --subtext:   #b0c4de;
+  --subtext:   #c4d4ec;
   --hover:     rgba(255,255,255,0.1);
   --nav-bg:    rgba(7,19,58,0.95);
   --nav-sel:   rgba(255,255,255,0.14);
@@ -33,17 +33,17 @@
   --surface:   #ffffff;
   --card:      #ffffff;
   --border:    #d0d7de;
-  --accent:    #1C305E;
-  --accent-h:  #243d78;
-  --accent-lit:#0969da;
+  --accent:    #2563eb;
+  --accent-h:  #1d4ed8;
+  --accent-lit:#1e60d5;
   --accent2:   #7928CA;
-  --success:   #1a7f37;
-  --warning:   #9a6700;
-  --error:     #cf222e;
+  --success:   #16a34a;
+  --warning:   #ca8a04;
+  --error:     #dc2626;
   --text:      #1f2328;
   --subtext:   #656d76;
   --hover:     #f3f4f6;
-  --nav-bg:    #1C305E;
+  --nav-bg:    #1e2a4a;
   --nav-sel:   rgba(255,255,255,0.16);
   --nav-text:  #ffffff;
   --btn-text:  #ffffff;
@@ -233,11 +233,11 @@ button {
   font-weight: 600;
   text-transform: uppercase;
 }
-.badge-success { background: rgba(63,185,80,0.18);  color: #3fb950; border: 1px solid rgba(63,185,80,0.4); }
-.badge-error   { background: rgba(248,81,73,0.15);  color: #f85149; border: 1px solid rgba(248,81,73,0.35); }
-.badge-warning { background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.35); }
-.badge-info    { background: rgba(168,200,240,0.15);color: #a8c8f0; border: 1px solid rgba(168,200,240,0.3); }
-.badge-purple  { background: rgba(185,124,249,0.15);color: #b97cf9; border: 1px solid rgba(185,124,249,0.35); }
+.badge-success { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid rgba(74,222,128,0.35); }
+.badge-error   { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.35); }
+.badge-warning { background: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.35); }
+.badge-info    { background: rgba(139,184,255,0.15); color: #8bb8ff; border: 1px solid rgba(139,184,255,0.3); }
+.badge-purple  { background: rgba(185,124,249,0.15); color: #c49dff; border: 1px solid rgba(185,124,249,0.35); }
 
 /* ── Tables ─────────────────────────────────────────────────── */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -363,7 +363,7 @@ tbody td { padding: 9px 12px; color: var(--text); }
   max-height: 500px;
   overflow-y: auto;
   padding: 14px 16px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.07);
   color: var(--text);
   font-size: 14px;
   outline: none;

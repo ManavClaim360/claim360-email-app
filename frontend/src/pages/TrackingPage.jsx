@@ -5,11 +5,11 @@ import { RefreshCw, CheckCircle, XCircle, Eye, Clock, Trash2 } from 'lucide-reac
 import toast from 'react-hot-toast'
 
 const STATUS_COLORS = {
-  sent:    'var(--success)',
-  opened:  'var(--accent)',
-  failed:  'var(--error)',
-  pending: 'var(--subtext)',
-  sending: 'var(--warning)',
+  sent:    '#4ade80',
+  opened:  '#8bb8ff',
+  failed:  '#f87171',
+  pending: '#c4d4ec',
+  sending: '#fbbf24',
 }
 
 export default function TrackingPage() {
@@ -294,7 +294,7 @@ export default function TrackingPage() {
                           <td style={{ fontSize: 12, color: 'var(--subtext)' }}>
                             {log.sent_at ? new Date(log.sent_at).toLocaleString() : '—'}
                           </td>
-                          <td style={{ fontSize: 12, color: log.opened_at ? 'var(--accent)' : 'var(--subtext)' }}>
+                          <td style={{ fontSize: 12, color: log.opened_at ? '#8bb8ff' : 'var(--subtext)' }}>
                             {log.opened_at ? new Date(log.opened_at).toLocaleString() : '—'}
                           </td>
                         </tr>
