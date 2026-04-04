@@ -154,6 +154,51 @@ export default function TrackingPage() {
               </div>
             </div>
 
+            {/* Who Opened panel */}
+            {(() => {
+              const opened = logs.filter(l => l.opened_at || l.status === 'opened')
+              return (
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>👁</span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>Who Opened</span>
+                      <span style={{ fontSize: 11, background: 'rgba(168,200,240,0.15)', color: 'var(--accent-lit)', border: '1px solid rgba(168,200,240,0.3)', borderRadius: 20, padding: '1px 8px', fontWeight: 600 }}>
+                        {opened.length} / {logs.length}
+                      </span>
+                    </div>
+                    {logsLoading && <span className="spinner" style={{ width: 14, height: 14 }} />}
+                  </div>
+                  {logsLoading ? (
+                    <div style={{ padding: 30, textAlign: 'center' }}><span className="spinner" /></div>
+                  ) : opened.length ? (
+                    <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+                      {opened.map((log, i) => (
+                        <div key={log.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '10px 16px', borderBottom: i < opened.length - 1 ? '1px solid var(--border)' : 'none',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(168,200,240,0.12)', border: '1px solid rgba(168,200,240,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--accent-lit)', fontWeight: 700, flexShrink: 0 }}>
+                              {log.recipient_email?.[0]?.toUpperCase() || '?'}
+                            </div>
+                            <span style={{ fontSize: 13, fontFamily: 'var(--mono)' }}>{log.recipient_email}</span>
+                          </div>
+                          <span style={{ fontSize: 11, color: 'var(--accent-lit)', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                            {log.opened_at ? new Date(log.opened_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ padding: 24, textAlign: 'center', color: 'var(--subtext)', fontSize: 13 }}>
+                      No opens tracked yet
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             {/* Email log table */}
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
