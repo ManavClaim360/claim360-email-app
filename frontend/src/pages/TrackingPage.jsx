@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { campaignsApi } from '../utils/api'
-import { RefreshCw, CheckCircle, XCircle, Eye, Clock, Trash2 } from 'lucide-react'
+import { BarChart2, RefreshCw, CheckCircle, XCircle, Eye, Clock, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const STATUS_COLORS = {
